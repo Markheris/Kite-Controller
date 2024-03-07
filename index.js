@@ -16,7 +16,7 @@ import { Server } from "socket.io"
 import { userRouter } from "./routes/user.js"
 import { teamRouter } from "./routes/team.js"
 import { notificationRouter } from "./routes/notification.js"
-
+import cookieParser from "cookie-parser";
 import fs from "fs";
 import { dbClient } from "./config/db.js";
 import { tournamentRouter } from "./routes/tournament.js";
@@ -28,6 +28,7 @@ app.use(express.json())
 app.use(cors({
     origin: "*"
 }))
+app.use(cookieParser);
 app.use('/api/user', userRouter);
 app.use('/api/team', teamRouter);
 app.use("/api/tournament", tournamentRouter)
