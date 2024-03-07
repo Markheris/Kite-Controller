@@ -66,7 +66,7 @@ userRouter.post("/signin", async (req, res, next) => {
             email: user.email
         }
         const token = jwt.sign(tokenData, process.env.TOKEN_SECRET, { expiresIn: "1d" })
-
+        res.header("Access-Control-Allow-Origin", "*");
         res.cookie("token", token)
         res.status(200);
         return res.json({ message: "Giriş başarılı", status: true });
