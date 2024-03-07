@@ -15,7 +15,7 @@ userRouter.post("/signup", async (req, res) => {
         const userCollection = client.collection("users");
         const foundedUser = await userCollection.findOne({ $or: [{ email: email }, { username: username }] });
         if (foundedUser) {
-            return res.status(400).send({ error: "Kullanıcı zaten mevcut" })
+            return res.status(200).send({ status: false, error: "Kullanıcı zaten mevcut" })
         }
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(password, salt)
@@ -37,13 +37,21 @@ userRouter.post("/signup", async (req, res) => {
             analytics: [],
         }
         userCollection.insertOne(userData).then(user => {
-            return res.status(200).send(user);
+            userCollection.findOne({ _id: new ObjectId(user.insertedId) }).then(savedUser => {
+                const tokenData = {
+                    id: savedUser._id,
+                    username: savedUser.username,
+                    email: savedUser.email
+                }
+                const token = jwt.sign(tokenData, process.env.TOKEN_SECRET, { expiresIn: "1d" })
+                res.status(200).cookie("token", token).json({ status: true, message: "Başarıyla oluşturuldu" })
+            })
         }).catch(e => {
-            return res.status(500).send({ error: e });
+            return res.statusCode(500)
         })
     }).catch(e => {
         console.log(e);
-        return res.status(500).send({ error: e })
+        return res.statusCode(500)
     })
 })
 
@@ -54,11 +62,11 @@ userRouter.post("/signin", async (req, res, next) => {
         const user = await userCollection.findOne({ email })
 
         if (!user)
-            return res.status(403).json({ error: "Kullanıcı adı veya şifre yanlış" })
+            return res.status(200).json({ status: false, error: "Kullanıcı adı veya şifre yanlış" })
         const validPassword = bcrypt.compare(password, user.password)
 
         if (!validPassword)
-            return res.status(403).json({ error: "Kullanıcı adı veya şifre yanlış" });
+            return res.status(200).json({ status: false, error: "Kullanıcı adı veya şifre yanlış" });
 
         const tokenData = {
             id: user._id,
@@ -66,7 +74,6 @@ userRouter.post("/signin", async (req, res, next) => {
             email: user.email
         }
         const token = jwt.sign(tokenData, process.env.TOKEN_SECRET, { expiresIn: "1d" })
-        res.header("Access-Control-Allow-Origin", "*");
         res.cookie("token", token)
         res.status(200);
         return res.json({ message: "Giriş başarılı", status: true });
@@ -75,12 +82,15 @@ userRouter.post("/signin", async (req, res, next) => {
     })
 })
 
-userRouter.post("/me", authMiddleware, async (req, res) => {
+userRouter.get("/me", authMiddleware, async (req, res) => {
     try {
         dbClient().then(async client => {
             const userId = req.userId;
             const userCollection = client.collection("users");
             const user = await userCollection.findOne({ _id: new ObjectId(userId) }, { projection: { password: 0 } })
+            if (!user) {
+                return res.status(200).json({ data: null })
+            }
             return res.status(200).json({ data: user });
         })
     } catch (error) {

@@ -20,11 +20,11 @@ notificationRouter.post("/send", authMiddleware, async (req, res) => {
         const user = await userCollection.findOne({ username: userName });
         if (user) {
             if (user.team) {
-                return res.status(400).json({ stauts: false, error: "Oyuncunun takımı var" })
+                return res.status(200).json({ stauts: false, error: "Oyuncunun takımı var" })
             } else {
                 for (let i = 0; i < user.notifications.length; i++) {
                     if (sender == user.notifications[i].sender) {
-                        return res.status(400).json({ stauts: false, error: "Bu oyuncuyu davet etmişsin" })
+                        return res.status(200).json({ stauts: false, error: "Bu oyuncuyu davet etmişsin" })
                     }
                 }
                 return await userCollection.findOneAndUpdate({ username: userName }, { $push: { notifications: notificationData } }).then(() => {
@@ -36,7 +36,7 @@ notificationRouter.post("/send", authMiddleware, async (req, res) => {
 
             }
         } else {
-            return res.status(404).json({ stauts: false, error: "Oyuncu bulunamadı" })
+            return res.status(200).json({ stauts: false, error: "Oyuncu bulunamadı" })
         }
     })
 })

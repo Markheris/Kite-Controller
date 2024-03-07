@@ -21,24 +21,13 @@ import fs from "fs";
 import { dbClient } from "./config/db.js";
 import { tournamentRouter } from "./routes/tournament.js";
 const io = new Server(server, {
-    cors: { origin: "*" }
+    cors: { origin: "https://kitetournaments.com" }
 })
-app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader(
-        "Access-Control-Allow-Headers",
-        "Origin, X-Requested-With, Content, Accept, Content-Type, Authorization"
-    );
-    res.setHeader(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-    );
-    next();
-});
+
 app.use(express.json())
 app.use(cors({
     credentials: true,
-    origin: "http://localhost:3000"
+    origin: "https://kitetournaments.com"
 }))
 app.use(cookieParser());
 app.use('/api/user', userRouter);

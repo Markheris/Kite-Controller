@@ -10,7 +10,6 @@ tournamentRouter.get("/getAll", (req, res) => {
         for await (const doc of tournamentCollection.find()) {
             tournamentData.push(doc);
         }
-
         return res.status(200).json({ status: true, data: tournamentData })
 
     })
@@ -25,7 +24,7 @@ tournamentRouter.post("/get", (req, res) => {
             if (tournament) {
                 return res.status(200).json({ status: true, data: tournament })
             } else {
-                return res.status(404).json({ status: false, error: "Turnuva bulunamadı" })
+                return res.status(200).json({ status: false, error: "Turnuva bulunamadı" })
             }
         }).catch(e => {
             console.log(e);

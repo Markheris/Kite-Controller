@@ -15,12 +15,11 @@ teamRouter.post("/create", authMiddleware, async (req, res) => {
             const team = await teamCollection.findOne({ teamName: teamName });
             const user = await userCollection.findOne({ _id: new ObjectId(playerId) })
             if (user.team) {
-                return res.status(400).json({ status: false, error: "Zaten takımın var" })
+                return res.status(200).json({ status: false, error: "Zaten takımın var" })
             }
             if (team) {
-                return res.status(400).json({ status: false, error: "Bu takım ismi kullanılıyor" })
+                return res.status(200).json({ status: false, error: "Bu takım ismi kullanılıyor" })
             }
-
             const teamData = {
                 teamName: teamName,
                 players: [{
@@ -74,21 +73,33 @@ teamRouter.post("/join", authMiddleware, async (req, res) => {
             captain: false
         }
         dbClient().then(async client => {
+            console.log("point 1")
             const teamCollection = client.collection("teams");
             const userCollection = client.collection("users");
             const user = await userCollection.findOne({ _id: new ObjectId(req.userId) })
             if (user.team) {
-                return res.status(400).json({ status: false, error: "Zaten takımın var" })
+                console.log("point 2")
+
+                return res.status(200).json({ status: false, error: "Zaten takımın var" })
+
             }
             await userCollection.findOneAndUpdate({ _id: new ObjectId(req.userId) }, { $set: { team: new ObjectId(req.body.teamId).toString() } }).then(async () => {
+                console.log("point 3")
+
                 await teamCollection.findOneAndUpdate({ _id: new ObjectId(req.body.teamId) }, { $push: { players: playerData } }).then(async () => {
-                    await userCollection.findOneAndUpdate({ _id: new ObjectId(req.userId) }, { $pull: { notifications: { teamId: new ObjectId(req.body.teamId) } } })
+                    console.log("point 4")
+
+                    await userCollection.findOneAndUpdate({ _id: new ObjectId(req.userId) }, { $pull: { notifications: { teamId: req.body.teamId } } })
+                    console.log("point 5")
+
                     return res.status(200).json({ status: true, message: "Takıma katıldın!" })
                 }).catch((e) => {
+                    console.log(e)
                     return res.sendStatus(500);
                 })
-            }).catch(() => {
-                return NextResponse.json({ error: e }, { status: 500 })
+            }).catch((e) => {
+                console.log(e);
+                res.sendStatus(500);
             })
         })
     } catch (error) {
