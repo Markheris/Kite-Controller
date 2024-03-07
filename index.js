@@ -14,6 +14,8 @@ import http from "http";
 const server = http.createServer(app);
 import { Server } from "socket.io"
 import { userRouter } from "./routes/user.js"
+import { teamRouter } from "./routes/team.js"
+
 import fs from "fs";
 import { dbClient } from "./config/db.js";
 const io = new Server(server, {
@@ -25,6 +27,7 @@ app.use(cors({
     origin: "*"
 }))
 app.use('/api/user', userRouter);
+app.use('/api/team', teamRouter);
 app.get("/", (req, res) => {
     res.json({ message: "Merhaba Dünya" }).status(200)
 })

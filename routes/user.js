@@ -1,8 +1,10 @@
-import express, { response } from "express"
+import express from "express"
 import "dotenv/config.js"
 import { dbClient } from "../config/db.js";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
+import { authMiddleware } from "../helper/authMiddleware.js";
+import { ObjectId } from "mongodb";
 
 export const userRouter = express.Router();
 
@@ -69,4 +71,25 @@ userRouter.post("/signin", async (req, res) => {
     }).catch(e => {
         return res.sendStatus(500)
     })
+})
+
+userRouter.post("/me", authMiddleware, async (req, res) => {
+    try {
+        dbClient().then(async client => {
+            const userId = req.userId;
+            const userCollection = client.collection("users");
+            const user = await userCollection.findOne({ _id: new ObjectId(userId) }, { projection: { password: 0 } })
+            return res.status(200).json({ data: user });
+        })
+    } catch (error) {
+        res.status(500).json({ error: error });
+    }
+})
+
+userRouter.get("/signout", (req, res) => {
+    try {
+        return res.status(200).clearCookie("token").json({ status: true, message: "Çıkış başarılı" })
+    } catch (error) {
+        return res.status(500).json({ error: error })
+    }
 })
