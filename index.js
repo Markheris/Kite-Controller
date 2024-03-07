@@ -28,7 +28,7 @@ app.use(express.json())
 app.use(cors({
     origin: "*"
 }))
-app.use(cookieParser);
+app.use(cookieParser());
 app.use('/api/user', userRouter);
 app.use('/api/team', teamRouter);
 app.use("/api/tournament", tournamentRouter)
