@@ -1,37 +1,33 @@
 import express from "express";
 const app = express();
 
-const options = {
-    key: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/privkey.pem"),
-    cert: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/cert.pem"),
-    ca: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/chain.pem"),
-}
+
+// const options = {
+//     key: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/privkey.pem"),
+//     cert: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/cert.pem"),
+//     ca: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/chain.pem"),
+// }
+
 
 import cors from "cors";
-import https from "https";
-const server = https.createServer(options, app)
-import {Server} from "socket.io"
-import {userRouter} from "./routes/user.js"
+import http from "http";
+const server = http.createServer(app);
+import { Server } from "socket.io"
+import { userRouter } from "./routes/user.js"
 import fs from "fs";
-
-
+import { dbClient } from "./config/db.js";
 const io = new Server(server, {
-    cors: {origin: "*"}
+    cors: { origin: "*" }
 })
 
 app.use(express.json())
 app.use(cors({
     origin: "*"
 }))
-
 app.use('/api/user', userRouter);
-
-app.get("/", (req,res) => {
-    res.json({message: "Merhaba Dünya"}).status(200)
+app.get("/", (req, res) => {
+    res.json({ message: "Merhaba Dünya" }).status(200)
 })
-
-
-
 server.listen(443, () => {
     console.log("Listening on *:443");
 })
