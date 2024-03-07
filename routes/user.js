@@ -47,7 +47,7 @@ userRouter.post("/signup", async (req, res) => {
     })
 })
 
-userRouter.post("/signin", async (req, res) => {
+userRouter.post("/signin", async (req, res, next) => {
     const { email, password } = req.body;
     dbClient().then(async (client) => {
         const userCollection = client.collection("users");
@@ -67,7 +67,8 @@ userRouter.post("/signin", async (req, res) => {
         }
         const token = jwt.sign(tokenData, process.env.TOKEN_SECRET, { expiresIn: "1d" })
 
-        return res.status(200).cookie("token", token).json({ message: "Giriş başarılı", status: true })
+        res.status(200).cookie("token", token).json({ message: "Giriş başarılı", status: true })
+        next();
     }).catch(e => {
         return res.sendStatus(500)
     })
