@@ -38,7 +38,7 @@ app.use((req, res, next) => {
 app.use(express.json())
 app.use(cors({
     credentials: true,
-    origin: "*"
+    origin: "http://localhost:3000"
 }))
 app.use(cookieParser());
 app.use('/api/user', userRouter);
