@@ -27,7 +27,7 @@ const io = new Server(server, {
 app.use(express.json())
 app.use(cors({
     credentials: true,
-    origin: "https://vercel.com"
+    origin: "https://kite-git-backend-integrity-testing-kite-crew.vercel.app"
 }))
 app.use(cookieParser());
 app.use('/api/user', userRouter);
