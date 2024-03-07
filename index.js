@@ -2,16 +2,16 @@ import express from "express";
 const app = express();
 
 
-// const options = {
-//     key: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/privkey.pem"),
-//     cert: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/cert.pem"),
-//     ca: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/chain.pem"),
-// }
+const options = {
+    key: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/privkey.pem"),
+    cert: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/cert.pem"),
+    ca: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/chain.pem"),
+}
 
 
 import cors from "cors";
-import http from "http";
-const server = http.createServer(app);
+import https from "https";
+const server = https.createServer(options, app);
 import { Server } from "socket.io"
 import { userRouter } from "./routes/user.js"
 import { teamRouter } from "./routes/team.js"
