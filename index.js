@@ -15,9 +15,11 @@ const server = http.createServer(app);
 import { Server } from "socket.io"
 import { userRouter } from "./routes/user.js"
 import { teamRouter } from "./routes/team.js"
+import { notificationRouter } from "./routes/notification.js"
 
 import fs from "fs";
 import { dbClient } from "./config/db.js";
+import { tournamentRouter } from "./routes/tournament.js";
 const io = new Server(server, {
     cors: { origin: "*" }
 })
@@ -28,6 +30,8 @@ app.use(cors({
 }))
 app.use('/api/user', userRouter);
 app.use('/api/team', teamRouter);
+app.use("/api/tournament", tournamentRouter)
+app.use('/api/notification', notificationRouter)
 app.get("/", (req, res) => {
     res.json({ message: "Merhaba Dünya" }).status(200)
 })
