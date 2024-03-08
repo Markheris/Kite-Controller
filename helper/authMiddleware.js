@@ -13,6 +13,6 @@ export async function authMiddleware(req, res, next) {
         next();
     } catch (error) {
         console.error(error);
-        return res.status(401).clearCookie("token").json({ success: false, message: "Invalid token" });
+        return res.clearCookie("token").redirect("/register", 401)
     }
 }
