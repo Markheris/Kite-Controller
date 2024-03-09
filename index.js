@@ -1,4 +1,5 @@
 import express from "express";
+
 const app = express();
 import https from "https";
 import http from "http";
@@ -7,7 +8,7 @@ let server;
 let origin
 
 
-if (process.env.NODE_ENV == 'production') {
+if (process.env.NODE_ENV === 'production') {
     const options = {
         key: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/privkey.pem"),
         cert: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/cert.pem"),
@@ -23,18 +24,18 @@ if (process.env.NODE_ENV == 'production') {
 }
 
 
-
 import cors from "cors";
-import { Server } from "socket.io"
-import { userRouter } from "./routes/user.js"
-import { teamRouter } from "./routes/team.js"
-import { notificationRouter } from "./routes/notification.js"
+import {Server} from "socket.io"
+import {userRouter} from "./routes/user.js"
+import {teamRouter} from "./routes/team.js"
+import {notificationRouter} from "./routes/notification.js"
 import cookieParser from "cookie-parser";
 import fs from "fs";
-import { dbClient } from "./config/db.js";
-import { tournamentRouter } from "./routes/tournament.js";
+import {dbClient} from "./config/db.js";
+import {tournamentRouter} from "./routes/tournament.js";
+
 const io = new Server(server, {
-    cors: { origin: origin }
+    cors: {origin: origin}
 })
 
 app.use(express.json())
@@ -43,14 +44,10 @@ app.use(cors({
     origin: origin
 }))
 app.use(cookieParser());
-app.use('/api/user', userRouter);
-app.use('/api/team', teamRouter);
-app.use("/api/tournament", tournamentRouter)
-app.use('/api/notification', notificationRouter)
-app.get("/", (req, res) => {
-    res.json({ message: "Merhaba Dünya" }).status(200)
-})
 
+app.get("/", (req, res) => {
+    res.json({message: "Merhaba Dünya"}).status(200)
+})
 
 
 let connectedUsers = [];
@@ -62,17 +59,16 @@ const monitoringConnectedUsers = (connectedUsers) => {
 io.on("connection", socket => {
     socket.on("userData", (clientUserId, clientTeamId) => {
         socket.join(clientUserId);
-        connectedUsers.push({ clientUserId: clientUserId, clientTeamId: clientTeamId, socketId: socket.id });
+        connectedUsers.push({clientUserId: clientUserId, clientTeamId: clientTeamId, socketId: socket.id});
         monitoringConnectedUsers(connectedUsers)
     })
     socket.on("disconnect", () => {
         console.log("disconnected", socket.id);
-        const disconnectUserIndex = connectedUsers.findIndex(object => {
-            return object.socketId === socket.id;
-        })
-        connectedUsers.splice(disconnectUserIndex, 1);
+        for (let i = 0; i < connectedUsers.length; i++)
+            if (connectedUsers[i].socketId === socket.id) {
+                connectedUsers.splice(i, 1);
+            }
         monitoringConnectedUsers(connectedUsers)
-
     })
 })
 
@@ -80,6 +76,10 @@ export var dbc;
 
 dbClient().then(client => {
     dbc = client;
+    app.use('/api/user', userRouter);
+    app.use('/api/team', teamRouter);
+    app.use("/api/tournament", tournamentRouter)
+    app.use('/api/notification', notificationRouter)
     const userCollection = client.collection("users");
     const teamCollection = client.collection("teams");
     const userChangeStream = userCollection.watch([], {
@@ -111,14 +111,10 @@ dbClient().then(client => {
         }
     })
 
-    process.on("exit", () =>{
+    process.on("exit", () => {
         client.client.close();
     })
 })
-
-
-
-
 
 
 server.listen(443, () => {
