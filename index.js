@@ -56,8 +56,8 @@ app.get("/", (req, res) => {
 let connectedUsers = [];
 
 const monitoringConnectedUsers = (connectedUsers) => {
-    console.log("Kite OAL™ Connected Users:", connectedUsers.length);
     console.log(connectedUsers);
+    console.log("Kite OAL™ Connected Users:", connectedUsers.length);
 }
 io.on("connection", socket => {
     socket.on("userData", (clientUserId, clientTeamId) => {
@@ -110,6 +110,10 @@ dbClient().then(client => {
             }
         }
     })
+
+    process.on("exit", () =>{
+        client.client.close();
+    })
 })
 
 
@@ -120,33 +124,3 @@ dbClient().then(client => {
 server.listen(443, () => {
     console.log("Listening on *:443");
 })
-
-
-
-
-//
-//
-// import "dotenv/config.js"
-// import {MongoClient} from "mongodb"
-//
-// // Replace the uri string with your connection string.
-// const uri = "mongodb+srv://master:Mentol123menh@heaven-community.7ku6epc.mongodb.net";
-//
-// const client = new MongoClient(process.env.MONGODB_URI);
-//
-// async function run() {
-//     try {
-//         const database = client.db('kitedb');
-//         const movies = database.collection('users');
-//
-//         // Query for a movie that has the title 'Back to the Future'
-//         const query = { email: 'efe@gmail.com' };
-//         const movie = await movies.findOne(query);
-//
-//         console.log(movie);
-//     } finally {
-//         // Ensures that the client will close when you finish/error
-//         await client.close();
-//     }
-// }
-// run().catch(console.dir);
