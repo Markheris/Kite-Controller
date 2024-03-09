@@ -53,8 +53,11 @@ app.get("/", (req, res) => {
 let connectedUsers = [];
 
 const monitoringConnectedUsers = (connectedUsers) => {
-    console.log(connectedUsers);
-    console.log("Kite OAL™ Connected Users:", connectedUsers.length);
+    const date = new Date();
+    const hour = date.getHours();
+    const min = date.getMinutes();
+    // console.log(connectedUsers);
+    console.log(hour + ":" + min, "Kite OAL™ Connected Users:", connectedUsers.length);
 }
 io.on("connection", socket => {
     socket.on("userData", (clientUserId, clientTeamId) => {
