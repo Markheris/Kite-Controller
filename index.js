@@ -25,17 +25,17 @@ if (process.env.NODE_ENV === 'production') {
 
 
 import cors from "cors";
-import {Server} from "socket.io"
-import {userRouter} from "./routes/user.js"
-import {teamRouter} from "./routes/team.js"
-import {notificationRouter} from "./routes/notification.js"
+import { Server } from "socket.io"
+import { userRouter } from "./routes/user.js"
+import { teamRouter } from "./routes/team.js"
+import { notificationRouter } from "./routes/notification.js"
 import cookieParser from "cookie-parser";
 import fs from "fs";
-import {dbClient} from "./config/db.js";
-import {tournamentRouter} from "./routes/tournament.js";
+import { dbClient } from "./config/db.js";
+import { tournamentRouter } from "./routes/tournament.js";
 
 const io = new Server(server, {
-    cors: {origin: origin}
+    cors: { origin: origin }
 })
 
 app.use(express.json())
@@ -46,23 +46,29 @@ app.use(cors({
 app.use(cookieParser());
 
 app.get("/", (req, res) => {
-    res.json({message: "Merhaba Dünya"}).status(200)
+    res.json({ message: "Merhaba Dünya" }).status(200)
 })
 
 
-let connectedUsers = [];
+const connectedUsers = [];
 
 const monitoringConnectedUsers = (connectedUsers) => {
     const date = new Date();
     const hour = date.getHours();
     const min = date.getMinutes();
-    // console.log(connectedUsers);
+    console.log(connectedUsers);
     console.log(hour + ":" + min, "Kite OAL™ Connected Users:", connectedUsers.length);
 }
 io.on("connection", socket => {
+    console.log("Connected a user")
     socket.on("userData", (clientUserId, clientTeamId) => {
-        socket.join(clientUserId);
-        connectedUsers.push({clientUserId: clientUserId, clientTeamId: clientTeamId, socketId: socket.id});
+        socket.join([clientUserId, clientTeamId]);
+        connectedUsers.push({ clientUserId: clientUserId, clientTeamId: clientTeamId, socketId: socket.id });
+        for (let i = 0; i < connectedUsers.length; i++) {
+            if (clientUserId === connectedUsers[i].clientUserId) {
+                connectedUsers[i].clientTeamId = clientTeamId;
+            }
+        }
         monitoringConnectedUsers(connectedUsers)
     })
     socket.on("disconnect", () => {
@@ -95,11 +101,7 @@ dbClient().then(client => {
     userChangeStream.on("change", (updatedUserData) => {
         if (updatedUserData.fullDocument) {
             const changedUserId = updatedUserData.fullDocument._id.toString();
-            for (let i = 0; i < connectedUsers.length; i++) {
-                if (changedUserId === connectedUsers[i].clientUserId) {
-                    io.to(connectedUsers[i].socketId).emit(connectedUsers[i].clientUserId, updatedUserData)
-                }
-            }
+            io.to(changedUserId).emit("userChange", updatedUserData)
         }
     })
 
