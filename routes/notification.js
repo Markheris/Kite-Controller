@@ -1,11 +1,11 @@
-import { Router } from "express";
-import { authMiddleware } from "../helper/authMiddleware.js";
-import { dbc } from "../index.js";
+import {Router} from "express";
+import {authMiddleware} from "../helper/authMiddleware.js";
+import {dbc} from "../index.js";
 
 export const notificationRouter = Router();
 
 notificationRouter.post("/send", authMiddleware, async (req, res) => {
-    const { userName, teamName, teamId, sender } = req.body
+    const {userName, teamName, teamId, sender} = req.body
 
     const notificationData = {
         title: "Takım Daveti",
@@ -16,18 +16,18 @@ notificationRouter.post("/send", authMiddleware, async (req, res) => {
     }
 
     const userCollection = dbc.collection("users");
-    const user = await userCollection.findOne({ username: userName });
+    const user = await userCollection.findOne({username: userName});
     if (user) {
         if (user.team) {
-            return res.status(200).json({ stauts: false, error: "Oyuncunun takımı var" })
+            return res.status(200).json({status: false, error: "Oyuncunun takımı var"})
         } else {
             for (let i = 0; i < user.notifications.length; i++) {
-                if (sender == user.notifications[i].sender) {
-                    return res.status(200).json({ stauts: false, error: "Bu oyuncuyu davet etmişsin" })
+                if (sender === user.notifications[i].sender) {
+                    return res.status(200).json({status: false, error: "Bu oyuncuyu davet etmişsin"})
                 }
             }
-            return await userCollection.findOneAndUpdate({ username: userName }, { $push: { notifications: notificationData } }).then(() => {
-                return res.status(200).json({ stauts: true, message: "Davet gönderildi!" })
+            return await userCollection.findOneAndUpdate({username: userName}, {$push: {notifications: notificationData}}).then(() => {
+                return res.status(200).json({status: true, message: "Davet gönderildi!"})
             }).catch(e => {
                 console.log(e);
                 return res.statusCode(500)
@@ -35,6 +35,6 @@ notificationRouter.post("/send", authMiddleware, async (req, res) => {
 
         }
     } else {
-        return res.status(200).json({ stauts: false, error: "Oyuncu bulunamadı" })
+        return res.status(200).json({stauts: false, error: "Oyuncu bulunamadı"})
     }
 })
