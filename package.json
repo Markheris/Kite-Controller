@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "linux-start": "sudo nodemon",
     "start": "nodemon"
   },
   "repository": {
