@@ -114,20 +114,20 @@ teamRouter.post("/leave", authMiddleware, async (req, res) => {
     const userCollection = dbc.collection("users");
     try {
         const {userId, teamId} = req.body;
-        teamCollection.findOneAndUpdate({_id: new ObjectId(teamId)}, {$pull: {players: {playerId: userId}}}).then(team => {
-            userCollection.findOneAndUpdate({_id: new ObjectId(userId)}, {$set: {team: null}}).then(user => {
-                console.log(userId, teamId)
-                res.status(200).json({status: true, message: "Başarılı"})
-            }).catch(e => {
-                console.log(e);
-                res.status(200).json({status: false, error: "Oyuncu Bulunamadı"})
-            })
-        }).catch((e) => {
+        userCollection.findOneAndUpdate({_id: new ObjectId(userId)}, {$set: {team: null}}).then(user => {
+            setTimeout(() => {
+                teamCollection.findOneAndUpdate({_id: new ObjectId(teamId)}, {$pull: {players: {playerId: userId}}}).then(team => {
+                    console.log(userId, teamId)
+                    res.status(200).json({status: true, message: "Başarılı"})
+                }).catch((e) => {
+                    console.log(e);
+                    res.status(200).json({status: false, error: "Takım Bulunamadı"})
+                })
+            }, 500)
+        }).catch(e => {
             console.log(e);
-            res.status(200).json({status: false, error: "Takım Bulunamadı"})
+            res.status(200).json({status: false, error: "Oyuncu Bulunamadı"})
         })
-
-
     } catch (error) {
         console.log(error)
         res.statusCode(500);
