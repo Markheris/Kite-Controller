@@ -80,11 +80,11 @@ userRouter.get("/me", authMiddleware, async (req, res) => {
         const userCollection = dbc.collection("users");
         const user = await userCollection.findOne({ _id: new ObjectId(userId) }, { projection: { password: 0 } })
         if (!user) {
-            return res.status(200).json({ data: null })
+            return res.status(200).json({status: false, data: null })
         }
-        return res.status(200).json({ data: user });
+        return res.status(200).json({status: true, data: user });
     } catch (error) {
-        res.status(500).json({ error: error });
+        res.status(500).json({status: false, error: error });
     }
 })
 
