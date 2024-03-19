@@ -3,6 +3,10 @@ import { dbc } from "../index.js";
 
 export const tournamentRouter = Router();
 
+tournamentRouter.post("/getWin", (req, res) => {
+    res.status(200).json({message: req.body})
+})
+
 tournamentRouter.get("/getAll", async (req, res) => {
     const tournamentCollection = dbc.collection("tournaments");
     const tournamentData = []
