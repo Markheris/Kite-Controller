@@ -4,6 +4,7 @@ import { dbc } from "../index.js";
 export const tournamentRouter = Router();
 
 tournamentRouter.post("/getWin", (req, res) => {
+    console.log(req);
     res.status(200).json({message: req.body})
 })
 
