@@ -33,6 +33,7 @@ import cookieParser from "cookie-parser";
 import fs from "fs";
 import {dbClient} from "./config/db.js";
 import {tournamentRouter} from "./routes/tournament.js";
+import {rsoRouter} from "./routes/rso.js";
 
 const io = new Server(server, {
     cors: {origin: origin}
@@ -99,6 +100,8 @@ dbClient().then(client => {
     app.use('/api/team', teamRouter);
     app.use("/api/tournament", tournamentRouter)
     app.use('/api/notification', notificationRouter)
+    app.use('/api/rso', rsoRouter)
+
     const userCollection = client.collection("users");
     const teamCollection = client.collection("teams");
     const userChangeStream = userCollection.watch([], {
