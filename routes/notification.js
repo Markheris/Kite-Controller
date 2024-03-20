@@ -5,7 +5,7 @@ import {dbc} from "../index.js";
 export const notificationRouter = Router();
 
 notificationRouter.post("/send", authMiddleware, async (req, res) => {
-    const {userName, teamName, teamId, sender} = req.body
+    const {gameName, tagLine, teamName, teamId, sender} = req.body
 
     const notificationData = {
         title: "Takım Daveti",
@@ -16,7 +16,7 @@ notificationRouter.post("/send", authMiddleware, async (req, res) => {
     }
 
     const userCollection = dbc.collection("users");
-    const user = await userCollection.findOne({username: userName});
+    const user = await userCollection.findOne({$and: [{gameName: gameName}, {tagLine: tagLine}]});
     if (user) {
         if (user.team) {
             return res.status(200).json({status: false, error: "Oyuncunun takımı var"})
@@ -26,7 +26,7 @@ notificationRouter.post("/send", authMiddleware, async (req, res) => {
                     return res.status(200).json({status: false, error: "Bu oyuncuyu davet etmişsin"})
                 }
             }
-            return await userCollection.findOneAndUpdate({username: userName}, {$push: {notifications: notificationData}}).then(() => {
+            return await userCollection.findOneAndUpdate({$and: [{gameName: gameName}, {tagLine: tagLine}]}, {$push: {notifications: notificationData}}).then(() => {
                 return res.status(200).json({status: true, message: "Davet gönderildi!"})
             }).catch(e => {
                 console.log(e);

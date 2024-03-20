@@ -45,6 +45,7 @@ app.use(cors({
     origin: origin
 }))
 app.use(cookieParser());
+app.use(express.urlencoded({extended: false}));
 
 app.get("/", (req, res) => {
     res.json({message: "Merhaba Dünya"}).status(200)

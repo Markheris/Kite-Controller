@@ -2,6 +2,8 @@ import {Router} from "express";
 import request from "request"
 import {authMiddleware} from "../helper/authMiddleware.js";
 import {dbc} from "../index.js";
+import https from "https";
+import {ObjectId} from "mongodb";
 
 var clientID = "client_id",
     clientSecret = "client_secret";
@@ -32,7 +34,7 @@ rsoRouter.get("/oauth", (req, res) => {
             redirect_uri: appCallbackUrl
         }
     }, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
+        if (!error && response.statusCode === 200) {
             // parse the response to JSON
             var payload = JSON.parse(body);
 
@@ -49,4 +51,59 @@ rsoRouter.get("/oauth", (req, res) => {
             res.send("/token request failed");
         }
     });
+})
+
+rsoRouter.post("/getUser", authMiddleware, (req, res) => {
+    const {gameName, tagLine} = req.body;
+    let riotApiToken = "RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a"
+    let getAccount = https.request({
+        host: 'europe.api.riotgames.com',
+        port: 443,
+        path: encodeURI(`/riot/account/v1/accounts/by-riot-id/${gameName}/${tagLine}`),
+        method: 'GET',
+        headers: {
+            "X-Riot-Token": riotApiToken
+        }
+    }, (accountRes) => {
+        accountRes.on('data', function (account) {
+            const parsedAccountData = JSON.parse(account)
+            console.log(parsedAccountData)
+            if (parsedAccountData.puuid) {
+                let getSummoner = https.request({
+                    host: 'tr1.api.riotgames.com',
+                    port: 443,
+                    path: encodeURI(`/lol/summoner/v4/summoners/by-puuid/${parsedAccountData.puuid}`),
+                    method: 'GET',
+                    headers: {
+                        "X-Riot-Token": riotApiToken
+                    }
+                }, (summonerRes) => {
+                    summonerRes.on("data", (summoner) => {
+                        const userCollection = dbc.collection("users")
+                        const parsedSummonerData = JSON.parse(summoner);
+                        if (parsedSummonerData.id) {
+                            userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {
+                                $set: {
+                                    avatar: parsedSummonerData.profileIconId,
+                                    summonerId: parsedSummonerData.id,
+                                    tagLine: parsedAccountData.tagLine.toUpperCase(),
+                                    gameName: parsedAccountData.gameName,
+                                }
+                            }).then(() => {
+                                return res.status(200).json({
+                                    status: true,
+                                    message: "Hesabın Bağlandı",
+                                })
+                            })
+                        }
+                    })
+                })
+                getSummoner.end();
+            } else {
+                return res.status(200).json({status: false, error: "Oyuncu Bulunamadı"})
+            }
+
+        });
+    });
+    getAccount.end();
 })
