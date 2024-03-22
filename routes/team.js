@@ -39,7 +39,6 @@ teamRouter.post("/create", authMiddleware, async (req, res) => {
         return res.sendStatus(500);
     }
 })
-
 teamRouter.post("/get", authMiddleware, async (req, res) => {
     try {
         let teamPlayersData = [];
@@ -69,10 +68,9 @@ teamRouter.post("/get", authMiddleware, async (req, res) => {
         const teamData = {...team, players: teamPlayersData}
         return res.status(200).json({status: true, data: teamData})
     } catch (e) {
-        return NextResponse.json({error: e.message}, {status: 500})
+        return res.sendStatus(500);
     }
 })
-
 teamRouter.post("/join", authMiddleware, async (req, res) => {
     try {
         const playerData = {
@@ -105,10 +103,34 @@ teamRouter.post("/join", authMiddleware, async (req, res) => {
         })
     } catch (error) {
         console.log(error);
-        res.statusCode(500)
+        res.sendStatus(500)
     }
 })
-
+teamRouter.post("/delete", authMiddleware, async (req,res) => {
+    const teamCollection = dbc.collection("teams");
+    const userCollection = dbc.collection("users")
+    try {
+        const {teamId} = req.body;
+        const team = await teamCollection.findOne({_id: new ObjectId(teamId)})
+        const captain = team.players.find(({ captain }) => captain === true);
+        console.log(captain);
+        if (req.userId !== captain.playerId) {
+            return res.sendStatus(401);
+        }
+        console.log(team)
+        if (!team) {
+            return res.status(200).json({status: false, error: "Takım bulunamadı"})
+        }
+        userCollection.updateMany({team: teamId}, {$set: {team: null}}).then( async () => {
+            setTimeout(async () => {
+                await teamCollection.deleteOne({_id: new ObjectId(teamId)})
+            },500)
+            return res.status(200).json({status: true, message: "Takım silindi"})
+        })
+    } catch (e) {
+        return res.sendStatus(500)
+    }
+})
 teamRouter.post("/leave", authMiddleware, async (req, res) => {
     const teamCollection = dbc.collection("teams");
     const userCollection = dbc.collection("users");
