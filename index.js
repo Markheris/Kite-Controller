@@ -111,7 +111,6 @@ dbClient().then(client => {
     const teamChangeStream = teamCollection.watch([], {
         fullDocument: "updateLookup"
     })
-
     userChangeStream.on("change", (updatedUserData) => {
         if (updatedUserData.fullDocument) {
             const changedUserId = updatedUserData.fullDocument._id.toString();

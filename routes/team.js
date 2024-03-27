@@ -26,7 +26,7 @@ teamRouter.post("/create", authMiddleware, async (req, res) => {
                 playerId: playerId,
                 captain: true
             }],
-            registeredTournaments: [],
+            registeredTournament: {},
         }
         await teamCollection.insertOne(teamData).then(async team => {
             await userCollection.findOneAndUpdate({_id: new ObjectId(playerId)}, {$set: {team: team.insertedId.toString()}}, {
@@ -83,36 +83,40 @@ teamRouter.post("/join", authMiddleware, async (req, res) => {
 
         const user = await userCollection.findOne({_id: new ObjectId(req.userId)})
         if (user.team) {
-
+            await userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {$pull: {notifications: {teamId: req.body.teamId}}})
             return res.status(200).json({status: false, error: "Zaten takımın var"})
-
         }
-        await userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {$set: {team: new ObjectId(req.body.teamId).toString()}}).then(async () => {
-
-            await teamCollection.findOneAndUpdate({_id: new ObjectId(req.body.teamId)}, {$push: {players: playerData}}).then(async () => {
-
+        teamCollection.findOne({_id: new ObjectId(req.body.teamId)}).then(async team => {
+            if (team.players.length >= 5) {
                 await userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {$pull: {notifications: {teamId: req.body.teamId}}})
-                return res.status(200).json({status: true, message: "Takıma katıldın!"})
+                return res.status(200).json({status: false, error: "Katılmak istediğin takım dolu"})
+            }
+            await userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {$set: {team: new ObjectId(req.body.teamId).toString()}}).then(async () => {
+                await teamCollection.findOneAndUpdate({_id: new ObjectId(req.body.teamId)}, {$push: {players: playerData}}).then(async (team) => {
+                    team.update
+                    await userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {$pull: {notifications: {teamId: req.body.teamId}}})
+                    return res.status(200).json({status: true, message: "Takıma katıldın!"})
+                }).catch((e) => {
+                    console.log(e)
+                    return res.sendStatus(500);
+                })
             }).catch((e) => {
-                console.log(e)
-                return res.sendStatus(500);
+                console.log(e);
+                res.sendStatus(500);
             })
-        }).catch((e) => {
-            console.log(e);
-            res.sendStatus(500);
         })
     } catch (error) {
         console.log(error);
         res.sendStatus(500)
     }
 })
-teamRouter.post("/delete", authMiddleware, async (req,res) => {
+teamRouter.post("/delete", authMiddleware, async (req, res) => {
     const teamCollection = dbc.collection("teams");
     const userCollection = dbc.collection("users")
     try {
         const {teamId} = req.body;
         const team = await teamCollection.findOne({_id: new ObjectId(teamId)})
-        const captain = team.players.find(({ captain }) => captain === true);
+        const captain = team.players.find(({captain}) => captain === true);
         console.log(captain);
         if (req.userId !== captain.playerId) {
             return res.sendStatus(401);
@@ -121,10 +125,10 @@ teamRouter.post("/delete", authMiddleware, async (req,res) => {
         if (!team) {
             return res.status(200).json({status: false, error: "Takım bulunamadı"})
         }
-        userCollection.updateMany({team: teamId}, {$set: {team: null}}).then( async () => {
+        userCollection.updateMany({team: teamId}, {$set: {team: null}}).then(async () => {
             setTimeout(async () => {
                 await teamCollection.deleteOne({_id: new ObjectId(teamId)})
-            },500)
+            }, 500)
             return res.status(200).json({status: true, message: "Takım silindi"})
         })
     } catch (e) {
@@ -152,6 +156,6 @@ teamRouter.post("/leave", authMiddleware, async (req, res) => {
         })
     } catch (error) {
         console.log(error)
-        res.statusCode(500);
+        res.sendStatus(500);
     }
 })
