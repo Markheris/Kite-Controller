@@ -138,24 +138,32 @@ teamRouter.post("/delete", authMiddleware, async (req, res) => {
 teamRouter.post("/leave", authMiddleware, async (req, res) => {
     const teamCollection = dbc.collection("teams");
     const userCollection = dbc.collection("users");
+    const tournamentCollection = dbc.collection("tournaments");
     try {
         const {userId, teamId} = req.body;
+        const team = await teamCollection.findOne({_id: new ObjectId(teamId)});
+
         userCollection.findOneAndUpdate({_id: new ObjectId(userId)}, {$set: {team: null}}).then(user => {
             setTimeout(() => {
-                teamCollection.findOneAndUpdate({_id: new ObjectId(teamId)}, {$pull: {players: {playerId: userId}}}).then(team => {
+                teamCollection.findOneAndUpdate({_id: new ObjectId(teamId)}, {$pull: {players: {playerId: userId}}}).then(async team => {
+                    if ('name' in team.registeredTournament) {
+                        await tournamentCollection.findOneAndUpdate({tournamentId: team.registeredTournament.tournamentId}, {$pull: {registeredTeams: {id: new ObjectId(team._id)}}}).then(async () => {
+                            await teamCollection.findOneAndUpdate({_id: new ObjectId(teamId)}, {$set: {registeredTournament: {}}})
+                        })
+                    }
                     console.log(userId, teamId)
-                    res.status(200).json({status: true, message: "Başarılı"})
+                    return res.status(200).json({status: true, message: "Başarılı"})
                 }).catch((e) => {
                     console.log(e);
-                    res.status(200).json({status: false, error: "Takım Bulunamadı"})
+                    return res.status(200).json({status: false, error: "Takım Bulunamadı"})
                 })
             }, 500)
         }).catch(e => {
             console.log(e);
-            res.status(200).json({status: false, error: "Oyuncu Bulunamadı"})
+            return res.status(200).json({status: false, error: "Oyuncu Bulunamadı"})
         })
     } catch (error) {
         console.log(error)
-        res.sendStatus(500);
+        return res.sendStatus(500);
     }
 })
