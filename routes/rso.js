@@ -44,7 +44,7 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
             };
 
             // legibly print out our tokens
-            return res.status(200).json({tokens: tokens, userId: req.userId});
+            return res.status(200).json({tokens: payload, userId: req.userId});
         } else {
            return res.send("/token request failed");
         }
