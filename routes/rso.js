@@ -5,23 +5,21 @@ import {dbc} from "../index.js";
 import https from "https";
 import {ObjectId} from "mongodb";
 
-var clientID = "client_id",
-    clientSecret = "client_secret";
+var clientID = "ce5aecf2-a4e8-4ae3-8f07-00168f91a105",
+    clientSecret = "rQrXBno5HzAGypcYvnat10dQZjsAlGrbwvVF7qH9AMu";
 
-var appBaseUrl = "http://local.example.com:3000",
-    appCallbackUrl = appBaseUrl + "/oauth";
+var appBaseUrl = "https://kitetournaments.com",
+    appCallbackUrl = appBaseUrl + "/rso/signin";
 
 var provider = "https://auth.riotgames.com",
-    authorizeUrl = provider + "/authorize",
     tokenUrl = provider + "/token";
 
 export const rsoRouter = Router();
 
-rsoRouter.get("/oauth", (req, res) => {
+rsoRouter.get("/oauth", authMiddleware, (req, res) => {
     var accessCode = req.query.code;
-
-    // make server-to-server request to token endpoint
-    // exchange authorization code for tokens
+    //make server-to-server request to token endpoint
+    //exchange authorization code for tokens
     request.post({
         url: tokenUrl,
         auth: { // sets "Authorization: Basic ..." header
