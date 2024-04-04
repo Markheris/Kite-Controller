@@ -105,10 +105,17 @@ dbClient().then(client => {
 
     const userCollection = client.collection("users");
     const teamCollection = client.collection("teams");
+    const tournamentCollection = client.collection("tournaments");
     const userChangeStream = userCollection.watch([], {
         fullDocument: "updateLookup"
     })
     const teamChangeStream = teamCollection.watch([], {
+        fullDocument: "updateLookup"
+    })
+    var filter = [{
+        $match: {"updateDescription.updatedFields.bracket": { $exists: true }}
+    }];
+    const tournamentStream =  tournamentCollection.watch([], {
         fullDocument: "updateLookup"
     })
     userChangeStream.on("change", (updatedUserData) => {
@@ -122,6 +129,12 @@ dbClient().then(client => {
         if (updatedTeamData.fullDocument) {
             const changedTeamId = updatedTeamData.fullDocument._id.toString();
             io.to(changedTeamId).emit("teamChange", updatedTeamData)
+        }
+    })
+
+    tournamentStream.on("change", (updatedTournamentData) => {
+        if (updatedTournamentData.fullDocument) {
+            io.emit("tournamentChange", updatedTournamentData);
         }
     })
 
