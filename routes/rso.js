@@ -52,7 +52,7 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                 method: 'GET',
                 headers: {
                     "X-Riot-Token": rsoClientApi,
-                    "Authorization": tokens.access_token,
+                    "Authorization": `Bearer ${tokens.access_token}`,
                 }
             }, (accountRes) => {
                 accountRes.on("error", error => {
