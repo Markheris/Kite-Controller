@@ -43,7 +43,7 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                 access_token: payload.access_token
             };
 
-            let rsoClientApi = "RGAPI-19271eed-4d72-4445-8098-7599d0e99590"
+            let rsoClientApi = "RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a"
 
             let getRiotAccReq = https.request({
                 host: "europe.api.riotgames.com",
