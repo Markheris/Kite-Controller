@@ -43,8 +43,29 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                 access_token: payload.access_token
             };
 
+            let rsoClientApi = "RGAPI-5fea57cd-20d0-4d50-acde-346fc12b7fcc"
+
+            let getRiotAccReq = https.request({
+                host: "europe.api.riotgames.com",
+                port: 443,
+                path: encodeURI(`/riot/account/v1/accounts/me`),
+                method: 'GET',
+                headers: {
+                    "X-Riot-Token": rsoClientApi,
+                    "Authorization": tokens.access_token,
+                }
+            }, (accountRes) => {
+                accountRes.on("error", error => {
+                    console.log(error)
+                    return res.status(200).json({status: false, error:error});
+                })
+                accountRes.on("data", account => {
+                    console.log(account)
+                    return res.status(200).json({acc: account, userId: req.userId});
+                })
+            });
+            getRiotAccReq.end();
             // legibly print out our tokens
-            return res.status(200).json({tokens: payload, userId: req.userId});
         } else {
            return res.send("/token request failed");
         }
