@@ -62,7 +62,7 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                 accountRes.on("data", account => {
                     const parsedAccountData = JSON.parse(account)
                     console.log(parsedAccountData)
-                    return res.status(200).json({acc: parsedAccountData, tokens: tokens, userId: req.userId});
+                    return res.status(200).json({acc: parsedAccountData, tokens: payload, userId: req.userId});
                 })
             });
             getRiotAccReq.end();
