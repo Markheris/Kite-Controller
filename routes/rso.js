@@ -71,19 +71,20 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                         summonerRes.on("data", (summoner) => {
                             const userCollection = dbc.collection("users")
                             const parsedSummonerData = JSON.parse(summoner);
-                            if (parsedSummonerData.status.status_code) {
-                                return res.status(200).json({acc: parsedAccountData, summ:parsedSummonerData, tokens: payload, userId: req.userId});
+                            if (parsedSummonerData.status) {
+                                return res.status(200).json({status: false, error: "Yalnızca League Of Legends hesabını bağlayabilirsin."});
                             }
                             if (parsedSummonerData.id) {
                                 userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {
                                     $set: {
                                         avatar: parsedSummonerData.profileIconId,
                                         summonerId: parsedSummonerData.id,
+                                        puuid: parsedAccountData.puuid,
                                         tagLine: parsedAccountData.tagLine.toUpperCase(),
                                         gameName: parsedAccountData.gameName,
                                     }
                                 }).then(() => {
-                                    return res.status(200).json({acc: parsedAccountData, tokens: payload, userId: req.userId});
+                                    return res.status(200).json({status: true, message: "Hesabın başarıyla bağlandı"});
                                 })
                             }
                         })
