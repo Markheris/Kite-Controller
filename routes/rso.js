@@ -58,6 +58,36 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                 accountRes.on("data", account => {
                     const parsedAccountData = JSON.parse(account)
                     console.log(parsedAccountData)
+                    let getSummoner = https.request({
+                        host: 'tr1.api.riotgames.com',
+                        port: 443,
+                        path: encodeURI(`/lol/summoner/v4/summoners/by-puuid/${parsedAccountData.puuid}`),
+                        method: 'GET',
+                        headers: {
+                            "X-Riot-Token": riotApiToken
+                        }
+                    }, (summonerRes) => {
+                        summonerRes.on("data", (summoner) => {
+                            const userCollection = dbc.collection("users")
+                            const parsedSummonerData = JSON.parse(summoner);
+                            if (parsedSummonerData.id) {
+                                userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {
+                                    $set: {
+                                        avatar: parsedSummonerData.profileIconId,
+                                        summonerId: parsedSummonerData.id,
+                                        tagLine: parsedAccountData.tagLine.toUpperCase(),
+                                        gameName: parsedAccountData.gameName,
+                                    }
+                                }).then(() => {
+                                    return res.status(200).json({
+                                        status: true,
+                                        message: "Hesabın Bağlandı",
+                                    })
+                                })
+                            }
+                        })
+                    })
+                    getSummoner.end();
                     return res.status(200).json({acc: parsedAccountData, tokens: payload, userId: req.userId});
                 })
             });
