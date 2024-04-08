@@ -17,6 +17,7 @@ var provider = "https://auth.riotgames.com",
 export const rsoRouter = Router();
 
 rsoRouter.get("/oauth", authMiddleware, (req, res) => {
+    let riotApiToken = "RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a"
     var accessCode = req.query.code;
     //make server-to-server request to token endpoint
     //exchange authorization code for tokens
@@ -101,7 +102,6 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
 
 rsoRouter.post("/getUser", authMiddleware, (req, res) => {
     const {gameName, tagLine} = req.body;
-    let riotApiToken = "RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a"
     let getAccount = https.request({
         host: 'europe.api.riotgames.com',
         port: 443,
