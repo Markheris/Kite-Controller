@@ -113,6 +113,8 @@ teamRouter.post("/join", authMiddleware, async (req, res) => {
 teamRouter.post("/delete", authMiddleware, async (req, res) => {
     const teamCollection = dbc.collection("teams");
     const userCollection = dbc.collection("users")
+    const tournamentCollection = dbc.collection("tournaments");
+
     try {
         const {teamId} = req.body;
         const team = await teamCollection.findOne({_id: new ObjectId(teamId)})
@@ -128,6 +130,7 @@ teamRouter.post("/delete", authMiddleware, async (req, res) => {
         userCollection.updateMany({team: teamId}, {$set: {team: null}}).then(async () => {
             setTimeout(async () => {
                 await teamCollection.deleteOne({_id: new ObjectId(teamId)})
+                await tournamentCollection.findOneAndUpdate({tournamentId: team.registeredTournament.tournamentId}, {$pull: {registeredTeams: {id: new ObjectId(team._id)}}})
             }, 500)
             return res.status(200).json({status: true, message: "Takım silindi"})
         })
