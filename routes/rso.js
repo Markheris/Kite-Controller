@@ -71,6 +71,9 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                         summonerRes.on("data", (summoner) => {
                             const userCollection = dbc.collection("users")
                             const parsedSummonerData = JSON.parse(summoner);
+                            if (parsedSummonerData.status.status_code) {
+                                return res.status(200).json({acc: parsedAccountData, summ:parsedSummonerData, tokens: payload, userId: req.userId});
+                            }
                             if (parsedSummonerData.id) {
                                 userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {
                                     $set: {
@@ -80,16 +83,12 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                                         gameName: parsedAccountData.gameName,
                                     }
                                 }).then(() => {
-                                    return res.status(200).json({
-                                        status: true,
-                                        message: "Hesabın Bağlandı",
-                                    })
+                                    return res.status(200).json({acc: parsedAccountData, tokens: payload, userId: req.userId});
                                 })
                             }
                         })
                     })
                     getSummoner.end();
-                    return res.status(200).json({acc: parsedAccountData, tokens: payload, userId: req.userId});
                 })
             });
             getRiotAccReq.end();
