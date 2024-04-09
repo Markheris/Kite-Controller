@@ -18,6 +18,7 @@ export const rsoRouter = Router();
 
 rsoRouter.get("/oauth", authMiddleware, (req, res) => {
     let riotApiToken = "RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a"
+    const userCollection = dbc.collection("users")
     var accessCode = req.query.code;
     //make server-to-server request to token endpoint
     //exchange authorization code for tokens
@@ -56,9 +57,21 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                     console.log(error)
                     return res.status(200).json({status: false, error: error});
                 })
-                accountRes.on("data", account => {
+                accountRes.on("data", async account => {
                     const parsedAccountData = JSON.parse(account)
                     console.log(parsedAccountData)
+                    const user = await userCollection.findOne({puuid: parsedAccountData.puuid})
+                    if (user.id === req.userId) {
+                        return res.status(200).json({
+                            status: false,
+                            error: "Bu Riot hesabı zaten Kite hesabına bağlı!"
+                        });
+                    } else if (user) {
+                        return res.status(200).json({
+                            status: false,
+                            error: "Bu Riot hesabı zaten başka bir Kite hesabına bağlı!"
+                        });
+                    }
                     let getSummoner = https.request({
                         host: 'tr1.api.riotgames.com',
                         port: 443,
@@ -69,7 +82,7 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                         }
                     }, (summonerRes) => {
                         summonerRes.on("data", (summoner) => {
-                            const userCollection = dbc.collection("users")
+
                             const parsedSummonerData = JSON.parse(summoner);
                             if (parsedSummonerData.status) {
                                 return res.status(200).json({
