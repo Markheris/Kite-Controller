@@ -61,12 +61,13 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                     const parsedAccountData = JSON.parse(account)
                     console.log(parsedAccountData)
                     const user = await userCollection.findOne({puuid: parsedAccountData.puuid})
-                    if (user._id === req.userId) {
-                        return res.status(200).json({
-                            status: false,
-                            error: "Bu Riot hesabı zaten Kite hesabına bağlı!"
-                        });
-                    } else if (user) {
+                    if (user) {
+                        if (user._id === req.userId) {
+                            return res.status(200).json({
+                                status: false,
+                                error: "Bu Riot hesabı zaten Kite hesabına bağlı!"
+                            });
+                        }
                         return res.status(200).json({
                             status: false,
                             error: "Bu Riot hesabı zaten başka bir Kite hesabına bağlı!"
