@@ -54,7 +54,7 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
             }, (accountRes) => {
                 accountRes.on("error", error => {
                     console.log(error)
-                    return res.status(200).json({status: false, error:error});
+                    return res.status(200).json({status: false, error: error});
                 })
                 accountRes.on("data", account => {
                     const parsedAccountData = JSON.parse(account)
@@ -72,7 +72,10 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
                             const userCollection = dbc.collection("users")
                             const parsedSummonerData = JSON.parse(summoner);
                             if (parsedSummonerData.status) {
-                                return res.status(200).json({status: false, error: "Yalnızca League Of Legends hesabını bağlayabilirsin."});
+                                return res.status(200).json({
+                                    status: false,
+                                    error: "Yalnızca League Of Legends hesabını bağlayabilirsin."
+                                });
                             }
                             if (parsedSummonerData.id) {
                                 userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {
@@ -95,7 +98,10 @@ rsoRouter.get("/oauth", authMiddleware, (req, res) => {
             getRiotAccReq.end();
             // legibly print out our tokens
         } else {
-           return res.send("/token request failed");
+            return res.status(200).json({
+                status: false,
+                error: "Bu sayfaya Kite Portal'dan geldiğine emin ol!"
+            })
         }
     });
 })
