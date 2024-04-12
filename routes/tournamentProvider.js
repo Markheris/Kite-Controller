@@ -36,7 +36,7 @@ tournamentProviderRouter.post("/createLobby", async (req, res) => {
                     "allowedParticipants": allowedParticipants,
                     "enoughPlayers": true,
                     "mapType": "SUMMONERS_RIFT",
-                    "metadata": "",
+                    "metadata": "Kite Tournaments",
                     "pickType": "TOURNAMENT_DRAFT",
                     "spectatorType": "ALL",
                     "teamSize": 5
