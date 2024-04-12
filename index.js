@@ -1,8 +1,19 @@
 import express from "express";
-
-const app = express();
 import https from "https";
 import http from "http";
+import cors from "cors";
+import {Server} from "socket.io"
+import {userRouter} from "./routes/user.js"
+import {teamRouter} from "./routes/team.js"
+import {notificationRouter} from "./routes/notification.js"
+import cookieParser from "cookie-parser";
+import fs from "fs";
+import {dbClient} from "./config/db.js";
+import {tournamentRouter} from "./routes/tournament.js";
+import {rsoRouter} from "./routes/rso.js";
+import {tournamentProviderRouter} from "./routes/tournamentProvider.js";
+
+const app = express();
 
 let server;
 let origin
@@ -23,17 +34,6 @@ if (process.env.NODE_ENV === 'production') {
     console.log("dev");
 }
 
-
-import cors from "cors";
-import {Server} from "socket.io"
-import {userRouter} from "./routes/user.js"
-import {teamRouter} from "./routes/team.js"
-import {notificationRouter} from "./routes/notification.js"
-import cookieParser from "cookie-parser";
-import fs from "fs";
-import {dbClient} from "./config/db.js";
-import {tournamentRouter} from "./routes/tournament.js";
-import {rsoRouter} from "./routes/rso.js";
 
 const io = new Server(server, {
     cors: {origin: origin}
@@ -100,6 +100,7 @@ dbClient().then(client => {
     app.use('/api/user', userRouter);
     app.use('/api/team', teamRouter);
     app.use("/api/tournament", tournamentRouter)
+    app.use("/api/tournament-provider", tournamentProviderRouter)
     app.use('/api/notification', notificationRouter)
     app.use('/api/rso', rsoRouter)
 
@@ -113,9 +114,9 @@ dbClient().then(client => {
         fullDocument: "updateLookup"
     })
     var filter = [{
-        $match: {"updateDescription.updatedFields.bracket": { $exists: true }}
+        $match: {"updateDescription.updatedFields.bracket": {$exists: true}}
     }];
-    const tournamentStream =  tournamentCollection.watch([], {
+    const tournamentStream = tournamentCollection.watch([], {
         fullDocument: "updateLookup"
     })
     userChangeStream.on("change", (updatedUserData) => {

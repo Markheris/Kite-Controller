@@ -28,6 +28,7 @@ userRouter.post("/signup", async (req, res) => {
         fateBalance: 0,
         avatar: null,
         summonerId: null,
+        puuid: null,
         tagLine: null,
         gameName: null,
         analytics: [],
