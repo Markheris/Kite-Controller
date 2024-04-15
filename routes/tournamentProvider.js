@@ -28,6 +28,7 @@ tournamentProviderRouter.post("/createLobby", async (req, res) => {
                     allowedParticipants.push(user.puuid);
                     teams[j].players.push({
                         name: user.gameName,
+                        tagLine: user.tagLine,
                         avatar: user.avatar,
                     })
                 }
@@ -48,6 +49,8 @@ tournamentProviderRouter.post("/createLobby", async (req, res) => {
                 }).then(async response => {
                 const activeLobby = {
                     tournamentCode: response.data[0],
+                    tournamentName: tournament.name,
+                    tournamentImage: tournament.tournamentImage,
                     tour: tournament.bracket[tourIndex].title,
                     team1: {
                         name: teams[0].teamName,
