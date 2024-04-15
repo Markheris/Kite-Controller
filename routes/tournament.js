@@ -122,7 +122,7 @@ tournamentRouter.post("/playerJoin", authMiddleware, async (req, res) => {
                         await teamCollection.updateOne({_id: new ObjectId(teamId)}, {
                             $set: {
                                 "registeredTournament.status": "teamFailed",
-                                "registeredTournament.statusMessage": "Katılım talebinin Takımındaki oyuncu(lar) reddettiği için onaylanmadı"
+                                "registeredTournament.statusMessage": "Katılım talebin, takımındaki oyuncu(lar) reddettiği için onaylanmadı"
                             }
                         })
 

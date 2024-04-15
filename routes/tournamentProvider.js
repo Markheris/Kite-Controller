@@ -2,20 +2,21 @@ import {Router} from "express";
 import {dbc} from "../index.js";
 import {ObjectId} from "mongodb";
 import axios from "axios";
+import {authMiddleware} from "../helper/authMiddleware.js";
 
 export const tournamentProviderRouter = Router();
 
 
-tournamentProviderRouter.post("/createLobby", async (req, res) => {
+tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) => {
     const {tournamentApiId, tournamentId, tourIndex} = req.query;
     const userCollection = dbc.collection("users");
     const tournamentCollection = dbc.collection("tournaments");
     const teamCollection = dbc.collection("teams");
     try {
         const adminUser = await userCollection.findOne({_id: new ObjectId(req.userId)});
-        // if (!(adminUser.isAdmin)) {
-        //     return res.sendStatus(401);
-        // }
+        if (!(adminUser.isAdmin)) {
+            return res.sendStatus(401);
+        }
         const tournament = await tournamentCollection.findOne({tournamentId: tournamentId});
         for (let i = 0; i < tournament.bracket[tourIndex].seeds.length; i++) {
             let allowedParticipants = [];
