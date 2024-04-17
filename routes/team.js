@@ -138,6 +138,31 @@ teamRouter.post("/delete", authMiddleware, async (req, res) => {
         return res.sendStatus(500)
     }
 })
+teamRouter.post("/admindelete", authMiddleware, async (req, res) => {
+    const teamCollection = dbc.collection("teams");
+    const userCollection = dbc.collection("users")
+    const tournamentCollection = dbc.collection("tournaments");
+    try {
+        const {teamId} = req.body;
+        const adminUser = await userCollection.findOne({_id: new ObjectId(req.userId)});
+        if (!(adminUser.isAdmin)) {
+            return res.sendStatus(403);
+        }
+        const team = await teamCollection.findOne({_id: new ObjectId(teamId)})
+        if (!team) {
+            return res.status(200).json({status: false, error: "Takım bulunamadı"})
+        }
+        userCollection.updateMany({team: teamId}, {$set: {team: null}}).then(async () => {
+            setTimeout(async () => {
+                await teamCollection.deleteOne({_id: new ObjectId(teamId)})
+                await tournamentCollection.findOneAndUpdate({tournamentId: team.registeredTournament.tournamentId}, {$pull: {registeredTeams: {id: new ObjectId(team._id)}}})
+            }, 500)
+            return res.status(200).json({status: true, message: "Takım silindi"})
+        })
+    } catch (e) {
+        return res.sendStatus(500)
+    }
+})
 teamRouter.post("/leave", authMiddleware, async (req, res) => {
     const teamCollection = dbc.collection("teams");
     const userCollection = dbc.collection("users");
