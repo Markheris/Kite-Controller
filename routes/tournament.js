@@ -81,14 +81,14 @@ tournamentRouter.post("/join", authMiddleware, async (req, res) => {
                 }
             }
         })
-        await tournamentCollection.updateOne({tournamentId: tournamentId}, {
-            $push: {
-                registeredTeams: {
-                    name: team.teamName,
-                    id: team._id,
-                }
-            }
-        })
+        // await tournamentCollection.updateOne({tournamentId: tournamentId}, {
+        //     $push: {
+        //         registeredTeams: {
+        //             name: team.teamName,
+        //             id: team._id,
+        //         }
+        //     }
+        // })
         return res.status(200).json({status: true, message: "Kayıt isteği gönderildi"})
     } catch (e) {
         console.log(e);
@@ -99,6 +99,7 @@ tournamentRouter.post("/join", authMiddleware, async (req, res) => {
 tournamentRouter.post("/playerJoin", authMiddleware, async (req, res) => {
     const {teamId, tournamentId, choose} = req.body;
     const teamCollection = dbc.collection("teams");
+    const tournamentCollection = dbc.collection("tournaments");
     try {
         const team = await teamCollection.findOne({_id: new ObjectId(teamId)})
         if (team.registeredTournament) {
@@ -110,14 +111,22 @@ tournamentRouter.post("/playerJoin", authMiddleware, async (req, res) => {
                 }, {returnDocument: "after"}).then(async (updatedTeam) => {
                     console.log(Object.keys(updatedTeam.registeredTournament.approvedPlayers).length);
                     if (Object.keys(updatedTeam.registeredTournament.approvedPlayers).length === 5)
-                        if (Object.values(updatedTeam.registeredTournament.approvedPlayers).every(Boolean))
+                        if (Object.values(updatedTeam.registeredTournament.approvedPlayers).every(Boolean)) {
+                            await tournamentCollection.updateOne({tournamentId: tournamentId}, {
+                                $push: {
+                                    registeredTeams: {
+                                        name: team.teamName,
+                                        id: team._id,
+                                    }
+                                }
+                            })
                             await teamCollection.updateOne({_id: new ObjectId(teamId)}, {
                                 $set: {
                                     "registeredTournament.status": "teamApproved",
                                     "registeredTournament.statusMessage": "Katılım talebin gönderildi! Tarafımızca inceleniyor."
                                 }
                             })
-
+                        }
                     if (!Object.values(updatedTeam.registeredTournament.approvedPlayers).every(Boolean))
                         await teamCollection.updateOne({_id: new ObjectId(teamId)}, {
                             $set: {
