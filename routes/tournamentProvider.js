@@ -3,6 +3,7 @@ import {dbc} from "../index.js";
 import {ObjectId} from "mongodb";
 import axios from "axios";
 import {authMiddleware} from "../helper/authMiddleware.js";
+import fs from "node:fs";
 
 export const tournamentProviderRouter = Router();
 
@@ -20,7 +21,13 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
         const tournament = await tournamentCollection.findOne({tournamentId: tournamentId});
         for (let i = 0; i < tournament.bracket[tourIndex].seeds.length; i++) {
             let allowedParticipants = [];
+            const matchId = tournament.bracket[tourIndex].seeds[i].id;
+            const nextMatchId = tournament.bracket[tourIndex].seeds[i].nextId;
             const teams = [];
+            console.log(tournament.bracket[tourIndex].seeds[i].teams.length)
+            if (tournament.bracket[tourIndex].seeds[i].teams.length === 0) {
+                continue;
+            }
             for (let j = 0; j < tournament.bracket[tourIndex].seeds[i].teams.length; j++) {
                 const team = await teamCollection.findOne({_id: new ObjectId(tournament.bracket[tourIndex].seeds[i].teams[j].id)});
                 teams.push(team);
@@ -51,6 +58,8 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
                 const activeLobby = {
                     tournamentCode: response.data[0],
                     tournamentName: tournament.name,
+                    matchId: matchId,
+                    nextMatchId: nextMatchId,
                     tournamentImage: tournament.tournamentImage,
                     tour: tournament.bracket[tourIndex].title,
                     team1: {
@@ -66,10 +75,24 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
                 await teamCollection.updateOne({_id: new ObjectId(teams[1]._id)}, {$set: {activeLobby: activeLobby}})
             }).catch(e => {
                 console.log("Hata", e);
+                return res.sendStatus(500)
             })
         }
         return res.json({tournamentApiId: tournamentApiId});
     } catch (e) {
         console.log(e);
+        return res.sendStatus(500)
     }
+})
+
+tournamentProviderRouter.post("/gameResult", async (req, res) => {
+    const content = req.body;
+    fs.writeFile('./output/gameResult.json', JSON.stringify(content, null, 2), err => {
+        if (err) {
+            console.log(err);
+            res.sendStatus(500)
+        } else {
+            res.sendStatus(200);
+        }
+    });
 })
