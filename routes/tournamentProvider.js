@@ -44,9 +44,9 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
             await axios.post(`https://americas.api.riotgames.com/lol/tournament/v5/codes?tournamentId=${tournamentApiId}&count=1`, {
                     "allowedParticipants": allowedParticipants,
                     "enoughPlayers": true,
-                    "mapType": "SUMMONERS_RIFT",
+                    "mapType": "HOWLING_ABYSS",
                     "metadata": "Kite Tournaments",
-                    "pickType": "TOURNAMENT_DRAFT",
+                    "pickType": "ALL_RANDOM",
                     "spectatorType": "ALL",
                     "teamSize": 5
                 }
@@ -60,6 +60,7 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
                     tournamentName: tournament.name,
                     matchId: matchId,
                     nextMatchId: nextMatchId,
+                    tourIndex: parseInt(tourIndex),
                     tournamentImage: tournament.tournamentImage,
                     tour: tournament.bracket[tourIndex].title,
                     team1: {
@@ -86,13 +87,52 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
 })
 
 tournamentProviderRouter.post("/gameResult", async (req, res) => {
-    const content = req.body;
-    fs.writeFile('./output/gameResult.json', JSON.stringify(content, null, 2), err => {
-        if (err) {
-            console.log(err);
-            res.sendStatus(500)
-        } else {
-            res.sendStatus(200);
-        }
-    });
+    const {shortCode} = req.body;
+    const userCollection = dbc.collection("users");
+    const teamCollection = dbc.collection("teams");
+    const tournamentCollection = dbc.collection("tournaments");
+    try {
+        const gameResult = await axios.get(`https://americas.api.riotgames.com/lol/tournament/v5/games/by-code/${shortCode}`, {
+            headers: {
+                "X-Riot-Token": "RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a"
+            }
+        })
+        const wonUser = await userCollection.findOne({puuid: gameResult.data[0].winningTeam[0].puuid});
+        const lostUser = await userCollection.findOne({puuid: gameResult.data[0].losingTeam[0].puuid});
+        const wonTeam = await teamCollection.findOne({_id: new ObjectId(wonUser.team)})
+        const lostTeam = await teamCollection.findOne({_id: new ObjectId(lostUser.team)})
+        const nextTourIndex = wonTeam.activeLobby.tourIndex + 1;
+        tournamentCollection.findOne({name: wonTeam.activeLobby.tournamentName}).then(async tournament => {
+            const seedIndex = tournament.bracket[nextTourIndex].seeds.findIndex(({id}) => id === wonTeam.activeLobby.nextMatchId);
+            await tournamentCollection.findOneAndUpdate({name: wonTeam.activeLobby.tournamentName}, {
+                $push: {
+                    [`bracket.${nextTourIndex}.seeds.${seedIndex}.teams`]: {
+                        name: wonTeam.teamName,
+                        id: wonTeam._id.toString()
+                    }
+                }
+            })
+            await teamCollection.findOneAndUpdate({_id: new ObjectId(lostTeam._id)}, {
+                $unset: {activeLobby: ""}
+            })
+            await teamCollection.findOneAndUpdate({_id: new ObjectId(wonTeam._id)}, {
+                $unset: {activeLobby: ""}
+            })
+        })
+        return res.status(200).json({
+            wonTeam: {name: wonTeam.teamName, id: wonTeam._id},
+            matchId: wonTeam.activeLobby.matchId,
+        });
+    } catch (e) {
+        console.log(e);
+        return res.sendStatus(500)
+    }
+    // fs.writeFile('./output/gameResult.json', JSON.stringify(content, null, 2), err => {
+    //     if (err) {
+    //         console.log(err);
+    //         res.sendStatus(500)
+    //     } else {
+    //         res.sendStatus(200);
+    //     }
+    // });
 })
