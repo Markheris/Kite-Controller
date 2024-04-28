@@ -24,7 +24,6 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
             const matchId = tournament.bracket[tourIndex].seeds[i].id;
             const nextMatchId = tournament.bracket[tourIndex].seeds[i].nextId;
             const teams = [];
-            console.log(tournament.bracket[tourIndex].seeds[i].teams.length)
             if (tournament.bracket[tourIndex].seeds[i].teams.length === 0) {
                 continue;
             }
