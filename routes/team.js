@@ -138,7 +138,7 @@ teamRouter.post("/delete", authMiddleware, async (req, res) => {
         return res.sendStatus(500)
     }
 })
-teamRouter.post("/admindelete", authMiddleware, async (req, res) => {
+teamRouter.post("/adminDelete", authMiddleware, async (req, res) => {
     const teamCollection = dbc.collection("teams");
     const userCollection = dbc.collection("users")
     const tournamentCollection = dbc.collection("tournaments");

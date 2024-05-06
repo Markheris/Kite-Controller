@@ -2,7 +2,6 @@ import {Router} from "express";
 import {dbc} from "../index.js";
 import {authMiddleware} from "../helper/authMiddleware.js";
 import {ObjectId} from "mongodb";
-import {formToJSON} from "axios";
 
 export const tournamentRouter = Router();
 
@@ -15,7 +14,7 @@ tournamentRouter.get("/getAll", async (req, res) => {
     const tournamentCollection = dbc.collection("tournaments");
     const tournamentData = []
     try {
-        for await (const doc of tournamentCollection.find()) {
+        for await (const doc of tournamentCollection.find({active: true})) {
             tournamentData.push(doc);
         }
         return res.status(200).json({status: true, data: tournamentData})
