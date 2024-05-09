@@ -26,7 +26,6 @@ teamRouter.post("/create", authMiddleware, async (req, res) => {
                 playerId: playerId,
                 captain: true
             }],
-            registeredTournament: {},
         }
         await teamCollection.insertOne(teamData).then(async team => {
             await userCollection.findOneAndUpdate({_id: new ObjectId(playerId)}, {$set: {team: team.insertedId.toString()}}, {
@@ -155,7 +154,9 @@ teamRouter.post("/adminDelete", authMiddleware, async (req, res) => {
         userCollection.updateMany({team: teamId}, {$set: {team: null}}).then(async () => {
             setTimeout(async () => {
                 await teamCollection.deleteOne({_id: new ObjectId(teamId)})
-                await tournamentCollection.findOneAndUpdate({tournamentId: team.registeredTournament.tournamentId}, {$pull: {registeredTeams: {id: new ObjectId(team._id)}}})
+                if (team.registeredTournament) {
+                    await tournamentCollection.findOneAndUpdate({tournamentId: team.registeredTournament.tournamentId}, {$pull: {registeredTeams: {id: new ObjectId(team._id)}}})
+                }
             }, 500)
             return res.status(200).json({status: true, message: "Takım silindi"})
         })
@@ -174,7 +175,7 @@ teamRouter.post("/leave", authMiddleware, async (req, res) => {
         userCollection.findOneAndUpdate({_id: new ObjectId(userId)}, {$set: {team: null}}).then(user => {
             setTimeout(() => {
                 teamCollection.findOneAndUpdate({_id: new ObjectId(teamId)}, {$pull: {players: {playerId: userId}}}).then(async team => {
-                    if ('name' in team.registeredTournament) {
+                    if (team.registeredTournament) {
                         await tournamentCollection.findOneAndUpdate({tournamentId: team.registeredTournament.tournamentId}, {$pull: {registeredTeams: {id: new ObjectId(team._id)}}}).then(async () => {
                             await teamCollection.findOneAndUpdate({_id: new ObjectId(teamId)}, {$set: {registeredTournament: {}}})
                         })

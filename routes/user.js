@@ -88,6 +88,62 @@ userRouter.get("/me", authMiddleware, async (req, res) => {
     }
 })
 
+userRouter.post("/discordConnect", authMiddleware, async (req, res) => {
+    const {discordUserName} = req.body;
+    const userCollection = dbc.collection("users");
+
+    try {
+        const user = await userCollection.findOne({discordUsername: discordUserName})
+        if (user) {
+            return res.status(200).json({status: false, error: "Bu kullanıcı mevcut"})
+        }
+        await userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {$set: {discordUsername: discordUserName}})
+        res.status(200).json({status: true, message: "Discord hesabın başarıyla bağlandı!"})
+    } catch (e) {
+        console.log(e);
+        res.sendStatus(500)
+    }
+})
+userRouter.post("/deleteDiscordConnect", authMiddleware, async (req, res) => {
+    const userCollection = dbc.collection("users");
+    const teamCollection = dbc.collection("teams");
+    try {
+        const user = await userCollection.findOne({_id: new ObjectId(req.userId)})
+        await teamCollection.deleteOne({_id: new ObjectId(user.team)})
+        await userCollection.updateMany({team: user.team}, {$set: {team: null}})
+        await userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {$set: {discordUsername: null}})
+        res.status(200).json({status: true, message: "Discord hesabının bağlantısı kaldırıldı!"})
+    } catch (e) {
+        console.log(e);
+        res.sendStatus(500)
+    }
+})
+
+userRouter.post("/deleteRiotConnect", authMiddleware, async (req, res) => {
+    const userCollection = dbc.collection("users");
+    const teamCollection = dbc.collection("teams");
+    try {
+        const user = await userCollection.findOne({_id: new ObjectId(req.userId)})
+        await teamCollection.deleteOne({_id: new ObjectId(user.team)})
+        await userCollection.updateMany({team: user.team}, {$set: {team: null}})
+        await userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {
+            $set: {
+                avatar: null,
+                summonerId: null,
+                tagLine: null,
+                gameName: null,
+                puuid: null,
+            }
+        })
+
+        res.status(200).json({status: true, message: "Riot hesabının bağlantısı kaldırıldı!"})
+    } catch (e) {
+        console.log(e);
+        res.sendStatus(500)
+    }
+})
+
+
 userRouter.get("/signout", (req, res) => {
     try {
         return res.status(200).clearCookie("token").json({status: true, message: "Çıkış başarılı"})
