@@ -129,7 +129,8 @@ teamRouter.post("/delete", authMiddleware, async (req, res) => {
         userCollection.updateMany({team: teamId}, {$set: {team: null}}).then(async () => {
             setTimeout(async () => {
                 await teamCollection.deleteOne({_id: new ObjectId(teamId)})
-                await tournamentCollection.findOneAndUpdate({tournamentId: team.registeredTournament.tournamentId}, {$pull: {registeredTeams: {id: new ObjectId(team._id)}}})
+                if (team.registeredTournament)
+                    await tournamentCollection.findOneAndUpdate({tournamentId: team.registeredTournament.tournamentId}, {$pull: {registeredTeams: {id: new ObjectId(team._id)}}})
             }, 500)
             return res.status(200).json({status: true, message: "Takım silindi"})
         })
