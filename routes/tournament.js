@@ -141,7 +141,7 @@ tournamentRouter.post("/playerJoin", authMiddleware, async (req, res) => {
 })
 
 tournamentRouter.post("/adminChoose", authMiddleware, async (req, res) => {
-    const {teamId, choose, failMessage} = req.body;
+    const {teamId, choose, failMessage, tournamentId} = req.body;
     const teamCollection = dbc.collection("teams")
     const tournamentCollection = dbc.collection("tournaments")
     const userCollection = dbc.collection("users")
@@ -157,7 +157,7 @@ tournamentRouter.post("/adminChoose", authMiddleware, async (req, res) => {
                     "registeredTournament.statusMessage": "Onaylandı"
                 }
             })
-            await tournamentCollection.updateOne({tournamentId: team.registeredTournament.tournamentId}, {
+            await tournamentCollection.updateOne({tournamentId: tournamentId}, {
                 $push: {
                     registeredTeams: {
                         name: team.teamName,
