@@ -140,6 +140,33 @@ tournamentRouter.post("/playerJoin", authMiddleware, async (req, res) => {
     }
 })
 
+tournamentRouter.get("/matches", authMiddleware, async (req, res) => {
+    const {tournamentId} = req.query;
+    const tournamentCollection = dbc.collection("tournaments")
+    const tournament = await tournamentCollection.findOne({tournamentId: tournamentId});
+
+    if (!tournament) {
+        return res.sendStatus(404);
+    }
+    let matches = [];
+
+    for (let i = 0; i < tournament.bracket.length; i++) {
+        for (let j = 0; j < tournament.bracket[i].seeds.length; j++) {
+            if (tournament.bracket[i].seeds[j].teams.length > 1) {
+                console.log(tournament.bracket[i].seeds[j].teams)
+                let matchObject = {
+                    team1: tournament.bracket[i].seeds[j].teams[0].name,
+                    team2: tournament.bracket[i].seeds[j].teams[1].name,
+                    tour: tournament.bracket[i].title,
+                    status: "Bekleniyor",
+                }
+                matches.push(matchObject);
+            }
+        }
+    }
+    return res.status(200).json({status: true, matches: matches});
+})
+
 tournamentRouter.post("/adminChoose", authMiddleware, async (req, res) => {
     const {teamId, choose, failMessage, tournamentId} = req.body;
     const teamCollection = dbc.collection("teams")
