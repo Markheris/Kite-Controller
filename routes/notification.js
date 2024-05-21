@@ -18,6 +18,14 @@ export async function sendTeamInviteNotification(teamId, teamName, sender, gameN
     const userCollection = dbc.collection("users");
     const user = await userCollection.findOne({$and: [{gameName: gameName}, {tagLine: tagLine}]});
     if (user) {
+        if (!(user.discordUsername))
+            return {
+                code: 200,
+                json: {
+                    status: false,
+                    error: "Oyuncu discord hesabını bağlamamış"
+                }
+            }
         if (user.team) {
             return {
                 code: 200,
