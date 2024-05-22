@@ -54,11 +54,15 @@ userRouter.post("/signup", async (req, res) => {
 userRouter.post("/signin", async (req, res, next) => {
     const {email, password} = req.body;
     const userCollection = dbc.collection("users");
-    const user = await userCollection.findOne({email})
+    const user = await userCollection.findOne({email: email})
 
     if (!user)
         return res.status(200).json({status: false, error: "Kullanıcı adı veya şifre yanlış"})
-    const validPassword = bcrypt.compare(password, user.password)
+
+    console.log(user.password);
+
+
+    const validPassword = await bcrypt.compare(password, user.password)
 
     if (!validPassword)
         return res.status(200).json({status: false, error: "Kullanıcı adı veya şifre yanlış"});
