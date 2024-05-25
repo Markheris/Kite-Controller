@@ -185,15 +185,17 @@ tournamentProviderRouter.post("/gameResult", async (req, res) => {
         const lostTeam = await teamCollection.findOne({_id: new ObjectId(lostUser.team)})
         const nextTourIndex = wonTeam.activeLobby.tourIndex + 1;
         tournamentCollection.findOne({name: wonTeam.activeLobby.tournamentName}).then(async tournament => {
-            const seedIndex = tournament.bracket[nextTourIndex].seeds.findIndex(({id}) => id === wonTeam.activeLobby.nextMatchId);
-            await tournamentCollection.findOneAndUpdate({name: wonTeam.activeLobby.tournamentName}, {
-                $push: {
-                    [`bracket.${nextTourIndex}.seeds.${seedIndex}.teams`]: {
-                        name: wonTeam.teamName,
-                        id: wonTeam._id.toString()
+            if (wonTeam.activeLobby.nextMatchId) {
+                const seedIndex = tournament.bracket[nextTourIndex].seeds.findIndex(({id}) => id === wonTeam.activeLobby.nextMatchId);
+                await tournamentCollection.findOneAndUpdate({name: wonTeam.activeLobby.tournamentName}, {
+                    $push: {
+                        [`bracket.${nextTourIndex}.seeds.${seedIndex}.teams`]: {
+                            name: wonTeam.teamName,
+                            id: wonTeam._id.toString()
+                        }
                     }
-                }
-            })
+                })
+            }
             await teamCollection.findOneAndUpdate({_id: new ObjectId(lostTeam._id)}, {
                 $unset: {activeLobby: ""}
             })
