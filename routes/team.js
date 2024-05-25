@@ -110,6 +110,7 @@ teamRouter.post("/join", authMiddleware, async (req, res) => {
     }
 })
 teamRouter.post("/delete", authMiddleware, async (req, res) => {
+    return res.status(200).json({status: false, message: "Turnuva henüz yeni bittiği için takımını silemezsin"})
     const teamCollection = dbc.collection("teams");
     const userCollection = dbc.collection("users")
     const tournamentCollection = dbc.collection("tournaments");

@@ -8,6 +8,89 @@ import fs from "node:fs";
 export const tournamentProviderRouter = Router();
 
 
+tournamentProviderRouter.post("/createThLobby", authMiddleware, async (req, res) => {
+    const {tournamentApiId, tournamentId, team1Id, team2Id} = req.body;
+    const userCollection = dbc.collection("users");
+    const tournamentCollection = dbc.collection("tournaments");
+    const teamCollection = dbc.collection("teams");
+
+    try {
+        const adminUser = await userCollection.findOne({_id: new ObjectId(req.userId)});
+        if (!(adminUser.isAdmin)) {
+            return res.sendStatus(401);
+        }
+        const teams = [];
+        let allowedParticipants = [];
+        const tournament = await tournamentCollection.findOne({tournamentId: tournamentId});
+        const teamA = await teamCollection.findOne({_id: new ObjectId(team1Id)});
+        const teamB = await teamCollection.findOne({_id: new ObjectId(team2Id)});
+        teams.push(teamA);
+        teams.push(teamB);
+        teams[0].players = [];
+        teams[1].players = [];
+        for await (const user of userCollection.find({team: teamA._id.toString()})) {
+            allowedParticipants.push(user.puuid);
+            teams[0].players.push({
+                name: user.gameName,
+                tagLine: user.tagLine,
+                avatar: user.avatar,
+            })
+        }
+        for await (const user of userCollection.find({team: teamB._id.toString()})) {
+            allowedParticipants.push(user.puuid);
+            teams[1].players.push({
+                name: user.gameName,
+                tagLine: user.tagLine,
+                avatar: user.avatar,
+            })
+        }
+        await axios.post(`https://americas.api.riotgames.com/lol/tournament/v5/codes?tournamentId=${tournamentApiId}&count=1`, {
+                "allowedParticipants": allowedParticipants,
+                "enoughPlayers": true,
+                "mapType": "SUMMONERS_RIFT",
+                "metadata": "Kite Tournaments",
+                "pickType": "TOURNAMENT_DRAFT",
+                "spectatorType": "ALL",
+                "teamSize": 5
+            }
+            , {
+                headers: {
+                    "X-Riot-Token": "RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a"
+                }
+            }).then(async response => {
+            const activeLobby = {
+                tournamentCode: response.data[0],
+                tournamentName: tournament.name,
+                tournamentImage: tournament.tournamentImage,
+                tour: "3.Lük Maçı",
+                team1: {
+                    name: teams[0].teamName,
+                    players: teams[0].players
+                },
+                team2: {
+                    name: teams[1].teamName,
+                    players: teams[1].players
+                },
+            }
+            await teamCollection.updateOne({_id: new ObjectId(teams[0]._id)}, {$set: {activeLobby: activeLobby}})
+            await teamCollection.updateOne({_id: new ObjectId(teams[1]._id)}, {$set: {activeLobby: activeLobby}})
+
+            return res.status(200).json({
+                status: true,
+                tournamentApiId: tournamentApiId,
+            })
+        }).catch(e => {
+            console.log("Hata", e);
+            return res.sendStatus(500)
+        })
+
+    } catch (e) {
+        console.log(e);
+        res.sendStatus(500);
+    }
+
+})
+
 tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) => {
     const {tournamentApiId, tournamentId, tourIndex} = req.query;
     const userCollection = dbc.collection("users");
@@ -24,7 +107,7 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
             const matchId = tournament.bracket[tourIndex].seeds[i].id;
             const nextMatchId = tournament.bracket[tourIndex].seeds[i].nextId;
             const teams = [];
-            if (tournament.bracket[tourIndex].seeds[i].teams.length === 0) {
+            if (tournament.bracket[tourIndex].seeds[i].teams.length < 2) {
                 continue;
             }
             for (let j = 0; j < tournament.bracket[tourIndex].seeds[i].teams.length; j++) {
@@ -43,9 +126,9 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
             await axios.post(`https://americas.api.riotgames.com/lol/tournament/v5/codes?tournamentId=${tournamentApiId}&count=1`, {
                     "allowedParticipants": allowedParticipants,
                     "enoughPlayers": true,
-                    "mapType": "HOWLING_ABYSS",
+                    "mapType": "SUMMONERS_RIFT",
                     "metadata": "Kite Tournaments",
-                    "pickType": "ALL_RANDOM",
+                    "pickType": "TOURNAMENT_DRAFT",
                     "spectatorType": "ALL",
                     "teamSize": 5
                 }

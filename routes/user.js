@@ -113,8 +113,8 @@ userRouter.post("/deleteDiscordConnect", authMiddleware, async (req, res) => {
     const teamCollection = dbc.collection("teams");
     try {
         const user = await userCollection.findOne({_id: new ObjectId(req.userId)})
-        await teamCollection.deleteOne({_id: new ObjectId(user.team)})
-        await userCollection.updateMany({team: user.team}, {$set: {team: null}})
+        //await teamCollection.deleteOne({_id: new ObjectId(user.team)})
+        //await userCollection.updateMany({team: user.team}, {$set: {team: null}})
         await userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {$set: {discordUsername: null}})
         res.status(200).json({status: true, message: "Discord hesabının bağlantısı kaldırıldı!"})
     } catch (e) {
@@ -128,8 +128,8 @@ userRouter.post("/deleteRiotConnect", authMiddleware, async (req, res) => {
     const teamCollection = dbc.collection("teams");
     try {
         const user = await userCollection.findOne({_id: new ObjectId(req.userId)})
-        await teamCollection.deleteOne({_id: new ObjectId(user.team)})
-        await userCollection.updateMany({team: user.team}, {$set: {team: null}})
+        //await teamCollection.deleteOne({_id: new ObjectId(user.team)})
+        //await userCollection.updateMany({team: user.team}, {$set: {team: null}})
         await userCollection.findOneAndUpdate({_id: new ObjectId(req.userId)}, {
             $set: {
                 avatar: null,
