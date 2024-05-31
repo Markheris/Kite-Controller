@@ -51,6 +51,10 @@ app.get("/", (req, res) => {
     res.json({message: "Merhaba Dünya"}).status(200)
 })
 
+app.get("/.well-known/acme-challenge/JI50X1Qfpss_1CubOPZ_O6h7xDQDaXpguJOYxUThdQM", (req, res) => {
+    res.send('JI50X1Qfpss_1CubOPZ_O6h7xDQDaXpguJOYxUThdQM.usEDMBAU7Dg7lFnM6uYI8E3GnVM5_B9NoUbkBYZ8SwI')
+})
+
 
 const usersMap = {};
 
