@@ -221,12 +221,14 @@ tournamentRouter.post("/adminCreateBracket", authMiddleware, async (req, res) =>
         const registeredTeams = tournament.registeredTeams;
         const bracketTour1 = tournament.bracket[0];
         for (let i = 0; i < bracketTour1.seeds.length; i++) {
+            bracketTour1.seeds[i].status = "Bekleniyor"
             for (let j = 0; j < 2; j++) {
                 if (registeredTeams.length > 0) {
                     const randomTeam = Math.floor(Math.random() * registeredTeams.length);
                     bracketTour1.seeds[i].teams[j] = {
                         name: registeredTeams[randomTeam].name,
-                        id: registeredTeams[randomTeam].id.toString()
+                        id: registeredTeams[randomTeam].id.toString(),
+                        wonMatch: 0,
                     }
                     registeredTeams.splice(randomTeam, 1);
                     console.log(registeredTeams, randomTeam);

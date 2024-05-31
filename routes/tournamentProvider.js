@@ -3,7 +3,6 @@ import {dbc} from "../index.js";
 import {ObjectId} from "mongodb";
 import axios from "axios";
 import {authMiddleware} from "../helper/authMiddleware.js";
-import fs from "node:fs";
 
 export const tournamentProviderRouter = Router();
 
@@ -110,6 +109,11 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
             if (tournament.bracket[tourIndex].seeds[i].teams.length < 2) {
                 continue;
             }
+            await tournamentCollection.findOneAndUpdate({tournamentId: tournamentId}, {
+                $set: {
+                    [`bracket.${tourIndex}.seeds.${i}.status`]: "Oynanıyor"
+                },
+            })
             for (let j = 0; j < tournament.bracket[tourIndex].seeds[i].teams.length; j++) {
                 const team = await teamCollection.findOne({_id: new ObjectId(tournament.bracket[tourIndex].seeds[i].teams[j].id)});
                 teams.push(team);
@@ -183,13 +187,26 @@ tournamentProviderRouter.post("/gameResult", async (req, res) => {
         const lostUser = await userCollection.findOne({puuid: gameResult.data[0].losingTeam[0].puuid});
         const wonTeam = await teamCollection.findOne({_id: new ObjectId(wonUser.team)})
         const lostTeam = await teamCollection.findOne({_id: new ObjectId(lostUser.team)})
-        const nextTourIndex = wonTeam.activeLobby.tourIndex + 1;
+        const tournamentName = wonTeam.activeLobby.tournamentName;
+        const tourIndex = wonTeam.activeLobby.tourIndex;
+        const nextTourIndex = tourIndex + 1;
         tournamentCollection.findOne({name: wonTeam.activeLobby.tournamentName}).then(async tournament => {
+            const seedIndex = tournament.bracket[tourIndex].seeds.findIndex(({id}) => id === wonTeam.activeLobby.matchId);
+            const wonTeamIndex = tournament.bracket[tourIndex].seeds[seedIndex].teams.findIndex(({name}) => name === wonTeam.teamName);
+            const lostTeamIndex = tournament.bracket[tourIndex].seeds[seedIndex].teams.findIndex(({name}) => name === lostTeam.teamName);
+
+            await tournamentCollection.findOneAndUpdate({name: tournamentName}, {
+                $set: {
+                    [`bracket.${tourIndex}.seeds.${seedIndex}.teams.${wonTeamIndex}.wonMatch`]: 1,
+                    [`bracket.${tourIndex}.seeds.${seedIndex}.teams.${lostTeamIndex}.wonMatch`]: 0,
+                    [`bracket.${tourIndex}.seeds.${seedIndex}.status`]: "Biti"
+                },
+            })
             if (wonTeam.activeLobby.nextMatchId) {
-                const seedIndex = tournament.bracket[nextTourIndex].seeds.findIndex(({id}) => id === wonTeam.activeLobby.nextMatchId);
+                const nextSeedIndex = tournament.bracket[nextTourIndex].seeds.findIndex(({id}) => id === wonTeam.activeLobby.nextMatchId);
                 await tournamentCollection.findOneAndUpdate({name: wonTeam.activeLobby.tournamentName}, {
                     $push: {
-                        [`bracket.${nextTourIndex}.seeds.${seedIndex}.teams`]: {
+                        [`bracket.${nextTourIndex}.seeds.${nextSeedIndex}.teams`]: {
                             name: wonTeam.teamName,
                             id: wonTeam._id.toString()
                         }
