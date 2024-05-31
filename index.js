@@ -144,7 +144,13 @@ dbClient().then(client => {
     })
 })
 
+if (process.env.NODE_ENV === 'production') {
+    server.listen(443, () => {
+        console.log("Listening on *:443");
+    })
+} else {
+    server.listen(80, () => {
+        console.log("Listening on *:80");
+    })
+}
 
-server.listen(443, () => {
-    console.log("Listening on *:443");
-})
