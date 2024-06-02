@@ -15,6 +15,7 @@ import {tournamentProviderRouter} from "./routes/tournamentProvider.js";
 
 const app = express();
 
+
 let server;
 let origin
 
@@ -153,7 +154,7 @@ if (process.env.NODE_ENV === 'production') {
         console.log("Listening on *:443");
     })
 } else {
-    server.listen(80, () => {
+    server.listen(443, () => {
         console.log("Listening on *:80");
     })
 }
