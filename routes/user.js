@@ -78,6 +78,23 @@ userRouter.post("/signin", async (req, res, next) => {
     return res.json({message: "Giriş başarılı", status: true});
 })
 
+userRouter.post("/delete", authMiddleware, async (req, res) => {
+    const {userId} = req.body;
+    const userCollection = dbc.collection("users");
+    const tournamentCollection = dbc.collection("teams");
+    try {
+        const adminUser = await userCollection.findOne({_id: new ObjectId(req.userId)});
+        if (!(adminUser.isAdmin)) {
+            return res.sendStatus(401);
+        }
+
+        
+    } catch (e) {
+        console.log(e);
+        return res.sendStatus(500);
+    }
+})
+
 userRouter.get("/me", authMiddleware, async (req, res) => {
     try {
         const userId = req.userId;

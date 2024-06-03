@@ -3,6 +3,7 @@ import {dbc} from "../index.js";
 import {ObjectId} from "mongodb";
 import axios from "axios";
 import {authMiddleware} from "../helper/authMiddleware.js";
+import {tournamentRouter} from "./tournament.js";
 
 export const tournamentProviderRouter = Router();
 
@@ -110,11 +111,14 @@ tournamentProviderRouter.post("/v2/createLobby/", authMiddleware, async (req, re
                     continue;
                 const participant1 = tournament.demoBracket.participant.find(({id}) => id === tournament.demoBracket.match[i].opponent1.id)
                 const participant2 = tournament.demoBracket.participant.find(({id}) => id === tournament.demoBracket.match[i].opponent2.id)
+                console.log(participant1);
+                console.log(participant2);
                 let team1 = await teamCollection.findOne({teamName: participant1.name})
                 let team2 = await teamCollection.findOne({teamName: participant2.name})
-                if (!(team1 || team2)) {
+                if (!team1 || !team2) {
                     continue;
                 }
+                console.log(team1);
                 team1.players = []
                 team2.players = []
                 for await (const user of userCollection.find({team: team1._id.toString()})) {
@@ -153,6 +157,7 @@ tournamentProviderRouter.post("/v2/createLobby/", authMiddleware, async (req, re
                         matchId: matchId,
                         placement: "opponent1",
                         tournamentImage: tournament.tournamentImage,
+                        tournamentId: tournamentId,
                         teamId: participant1.id,
                         tour: tourName,
                         team1: {
@@ -170,6 +175,7 @@ tournamentProviderRouter.post("/v2/createLobby/", authMiddleware, async (req, re
                         matchId: matchId,
                         placement: "opponent2",
                         tournamentImage: tournament.tournamentImage,
+                        tournamentId: tournamentId,
                         tour: tourName,
                         teamId: participant2.id,
                         team1: {
@@ -279,11 +285,13 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
     }
 })
 
+
 tournamentProviderRouter.post("/gameResult", async (req, res) => {
     const {shortCode} = req.body;
     const userCollection = dbc.collection("users");
     const teamCollection = dbc.collection("teams");
     const tournamentCollection = dbc.collection("tournaments");
+    const tournamentName = wonTeam.activeLobby.tournamentName;
     try {
         const gameResult = await axios.get(`https://americas.api.riotgames.com/lol/tournament/v5/games/by-code/${shortCode}`, {
             headers: {

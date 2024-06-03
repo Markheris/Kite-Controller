@@ -5,6 +5,8 @@ import {ObjectId} from "mongodb";
 
 import {InMemoryDatabase} from "brackets-memory-db";
 import {BracketsManager} from "brackets-manager";
+import axios from "axios";
+import {tournamentProviderRouter} from "./tournamentProvider.js";
 
 const storage = new InMemoryDatabase();
 const manager = new BracketsManager(storage);
@@ -12,7 +14,7 @@ const manager = new BracketsManager(storage);
 export const tournamentRouter = Router();
 
 
-tournamentRouter.get("/createManager", async (req, res) => {
+tournamentRouter.get("/v2/createBracket", async (req, res) => {
     const {tournamentId} = req.query
     const tournamentCollection = dbc.collection("tournaments");
     try {
@@ -24,6 +26,7 @@ tournamentRouter.get("/createManager", async (req, res) => {
             tournamentId: tournamentId, //
             type: 'single_elimination',
             settings: {
+                consolationFinal: true,
                 matchesChildCount: 1
             },
             seeding: registeredTeams,
@@ -38,30 +41,26 @@ tournamentRouter.get("/createManager", async (req, res) => {
         res.sendStatus(500);
     }
 })
-tournamentRouter.get("/getBracket", async (req, res) => {
-    const {tournamentId} = req.query
-    const tournamentCollection = dbc.collection("tournaments");
-    try {
-        const tournament = await tournamentCollection.findOne({tournamentId: tournamentId})
-        if (tournament.demoBracket) {
-            return res.status(200).json(tournament.demoBracket)
-        }
-        res.json(await manager.get.tournamentData(tournamentId))
-    } catch (e) {
-        console.log(e);
-        res.sendStatus(500);
-    }
-})
 
-tournamentRouter.get("/updateBracket", async (req, res) => {
-    const {tournamentId} = req.query
+tournamentRouter.post("/v2/manualUpdateBracket", async (req, res) => {
+    const {tournamentId, matchId, wonTeamPlacement} = req.body
     const tournamentCollection = dbc.collection("tournaments");
     try {
-        await manager.update.match({
-            id: 1, // First match of winner bracket (round 1)
-            opponent1: {score: 2, result: 'win'},
-            opponent2: {score: 0,},
-        });
+        const tournament = await tournamentCollection.findOne({tournamentId: tournamentId});
+        await manager.import(tournament.demoBracket);
+        if (wonTeamPlacement === "opponent1") {
+            await manager.update.match({
+                id: matchId, // First match of winner bracket (round 1)
+                opponent1: {score: 1, result: "win"},
+                opponent2: {score: 0},
+            });
+        } else {
+            await manager.update.match({
+                id: matchId, // First match of winner bracket (round 1)
+                opponent1: {score: 0},
+                opponent2: {score: 1, result: 'win'},
+            });
+        }
         const demoBracket = await manager.get.tournamentData(tournamentId)
         await tournamentCollection.updateOne({tournamentId: tournamentId}, {
             $set: {demoBracket: demoBracket}
@@ -72,6 +71,59 @@ tournamentRouter.get("/updateBracket", async (req, res) => {
         })
     } catch (e) {
         console.log(e);
+        return res.sendStatus(500);
+    }
+})
+tournamentRouter.post("/v2/gameResult", async (req, res) => {
+    const {shortCode} = req.body;
+    const userCollection = dbc.collection("users");
+    const teamCollection = dbc.collection("teams");
+    const tournamentCollection = dbc.collection("tournaments");
+
+    try {
+        const gameResult = await axios.get(`https://americas.api.riotgames.com/lol/tournament/v5/games/by-code/${shortCode}`, {
+            headers: {
+                "X-Riot-Token": "RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a"
+            }
+        })
+        const wonUser = await userCollection.findOne({puuid: gameResult.data[0].winningTeam[0].puuid});
+        const lostUser = await userCollection.findOne({puuid: gameResult.data[0].losingTeam[0].puuid});
+        const wonTeam = await teamCollection.findOne({_id: new ObjectId(wonUser.team)})
+        const lostTeam = await teamCollection.findOne({_id: new ObjectId(lostUser.team)})
+        const matchId = wonTeam.activeLobby.matchId;
+        const tournamentId = wonTeam.activeLobby.tournamentId;
+        const tournament = await tournamentCollection.findOne({tournamentId: tournamentId});
+        // const matchIndex = tournament.demoBracket.match.findIndex(({id}) => id === matchId);
+        // const match = tournament.demoBracket.match[matchIndex];
+        await manager.import(tournament.demoBracket);
+        console.log(await manager.get.tournamentData(tournamentId));
+        if (wonTeam.activeLobby.placement === "opponent1") {
+            await manager.update.match({
+                id: matchId,
+                opponent1: {score: 1, result: "win"},
+                opponent2: {score: 0}
+            })
+        } else {
+            await manager.update.match({
+                id: matchId,
+                opponent1: {score: 0},
+                opponent2: {score: 1, result: "win"}
+            })
+        }
+        const demoBracket = await manager.get.tournamentData(tournamentId)
+        await tournamentCollection.updateOne({tournamentId: tournamentId}, {
+            $set: {demoBracket: demoBracket}
+        })
+        await teamCollection.findOneAndUpdate({_id: new ObjectId(lostTeam._id)}, {
+            $unset: {activeLobby: ""}
+        })
+        await teamCollection.findOneAndUpdate({_id: new ObjectId(wonTeam._id)}, {
+            $unset: {activeLobby: ""}
+        })
+        return res.status(200).json({status: true, message: "Başarıyla Güncellendi"})
+    } catch (e) {
+        console.log(e);
+        return res.sendStatus(500);
     }
 })
 
@@ -256,12 +308,7 @@ tournamentRouter.post("/adminChoose", authMiddleware, async (req, res) => {
                 }
             })
             await tournamentCollection.updateOne({tournamentId: tournamentId}, {
-                $push: {
-                    registeredTeams: {
-                        name: team.teamName,
-                        id: team._id,
-                    }
-                }
+                $push: {registeredTeams: team.teamName}
             })
             return res.status(200).json({status: true, message: "Takım Onaylandı"})
         } else {
@@ -275,7 +322,8 @@ tournamentRouter.post("/adminChoose", authMiddleware, async (req, res) => {
         }
 
     } catch (e) {
-
+        console.log(e);
+        return res.sendStatus(500);
     }
 })
 
