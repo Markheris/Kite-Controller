@@ -3,10 +3,10 @@ import {dbc} from "../index.js";
 import {authMiddleware} from "../helper/authMiddleware.js";
 import {ObjectId} from "mongodb";
 
-import {JsonDatabase} from "brackets-json-db";
+import {InMemoryDatabase} from "brackets-memory-db";
 import {BracketsManager} from "brackets-manager";
 
-const storage = new JsonDatabase();
+const storage = new InMemoryDatabase();
 const manager = new BracketsManager(storage);
 
 export const tournamentRouter = Router();
@@ -16,6 +16,7 @@ tournamentRouter.get("/createManager", async (req, res) => {
     const {tournamentId} = req.query
     const tournamentCollection = dbc.collection("tournaments");
     try {
+        await manager.delete.tournament(tournamentId)
         const tournament = await tournamentCollection.findOne({tournamentId: tournamentId});
         const registeredTeams = tournament.registeredTeams
         await manager.create({

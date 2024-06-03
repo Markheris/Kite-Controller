@@ -90,6 +90,113 @@ tournamentProviderRouter.post("/createThLobby", authMiddleware, async (req, res)
 
 })
 
+tournamentProviderRouter.post("/v2/createLobby/", authMiddleware, async (req, res) => {
+    const {tournamentApiId, tourName, tournamentId, roundId} = req.body;
+    const userCollection = dbc.collection("users");
+    const tournamentCollection = dbc.collection("tournaments");
+    const teamCollection = dbc.collection("teams");
+    try {
+        const adminUser = await userCollection.findOne({_id: new ObjectId(req.userId)});
+        if (!(adminUser.isAdmin)) {
+            return res.sendStatus(401);
+        }
+        const tournament = await tournamentCollection.findOne({tournamentId: tournamentId});
+        const matches = [];
+        for (let i = 0; i < tournament.demoBracket.match.length; i++) {
+            if (tournament.demoBracket.match[i].round_id === roundId) {
+                let allowedParticipants = [];
+                const matchId = tournament.demoBracket.match[i].id;
+                if (!(tournament.demoBracket.match[i].opponent2))
+                    continue;
+                const participant1 = tournament.demoBracket.participant.find(({id}) => id === tournament.demoBracket.match[i].opponent1.id)
+                const participant2 = tournament.demoBracket.participant.find(({id}) => id === tournament.demoBracket.match[i].opponent2.id)
+                let team1 = await teamCollection.findOne({teamName: participant1.name})
+                let team2 = await teamCollection.findOne({teamName: participant2.name})
+                if (!(team1 || team2)) {
+                    continue;
+                }
+                team1.players = []
+                team2.players = []
+                for await (const user of userCollection.find({team: team1._id.toString()})) {
+                    allowedParticipants.push(user.puuid);
+                    team1.players.push({
+                        name: user.gameName,
+                        tagLine: user.tagLine,
+                        avatar: user.avatar,
+                    })
+                }
+                for await (const user of userCollection.find({team: team2._id.toString()})) {
+                    allowedParticipants.push(user.puuid);
+                    team2.players.push({
+                        name: user.gameName,
+                        tagLine: user.tagLine,
+                        avatar: user.avatar,
+                    })
+                }
+                await axios.post(`https://americas.api.riotgames.com/lol/tournament/v5/codes?tournamentId=${tournamentApiId}&count=1`, {
+                        "allowedParticipants": allowedParticipants,
+                        "enoughPlayers": true,
+                        "mapType": "SUMMONERS_RIFT",
+                        "metadata": "Kite Tournaments",
+                        "pickType": "TOURNAMENT_DRAFT",
+                        "spectatorType": "ALL",
+                        "teamSize": 5
+                    }
+                    , {
+                        headers: {
+                            "X-Riot-Token": "RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a"
+                        }
+                    }).then(async response => {
+                    const activeLobbyTeam1 = {
+                        tournamentCode: response.data[0],
+                        tournamentName: tournament.name,
+                        matchId: matchId,
+                        placement: "opponent1",
+                        tournamentImage: tournament.tournamentImage,
+                        teamId: participant1.id,
+                        tour: tourName,
+                        team1: {
+                            name: team1.teamName,
+                            players: team1.players
+                        },
+                        team2: {
+                            name: team2.teamName,
+                            players: team2.players
+                        },
+                    }
+                    const activeLobbyTeam2 = {
+                        tournamentCode: response.data[0],
+                        tournamentName: tournament.name,
+                        matchId: matchId,
+                        placement: "opponent2",
+                        tournamentImage: tournament.tournamentImage,
+                        tour: tourName,
+                        teamId: participant2.id,
+                        team1: {
+                            name: team1.teamName,
+                            players: team1.players
+                        },
+                        team2: {
+                            name: team2.teamName,
+                            players: team2.players
+                        },
+                    }
+                    await teamCollection.updateOne({teamName: team1.teamName}, {$set: {activeLobby: activeLobbyTeam1}})
+                    await teamCollection.updateOne({teamName: team2.teamName}, {$set: {activeLobby: activeLobbyTeam2}})
+                }).catch(e => {
+                    console.log("Hata", e);
+                    return res.sendStatus(500)
+                })
+                console.log(team1, team2, allowedParticipants)
+            }
+        }
+        return res.sendStatus(200);
+    } catch (e) {
+        console.log(e)
+        res.sendStatus(500);
+    }
+})
+
 tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) => {
     const {tournamentApiId, tournamentId, tourIndex} = req.query;
     const userCollection = dbc.collection("users");
