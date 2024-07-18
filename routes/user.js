@@ -1,10 +1,11 @@
-import express from "express"
+import express, {response} from "express"
 import "dotenv/config.js"
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import {authMiddleware} from "../helper/authMiddleware.js";
 import {ObjectId} from "mongodb";
 import {dbc} from "../index.js";
+import axios from "axios";
 
 
 export const userRouter = express.Router();
@@ -47,7 +48,7 @@ userRouter.post("/signup", async (req, res) => {
             res.status(200).cookie("token", token).json({status: true, message: "Başarıyla oluşturuldu"})
         })
     }).catch(e => {
-        return res.statusCode(500)
+        return res.sendStatus(500)
     })
 })
 
@@ -78,6 +79,38 @@ userRouter.post("/signin", async (req, res, next) => {
     return res.json({message: "Giriş başarılı", status: true});
 })
 
+userRouter.get("/userUpdate", authMiddleware, async (req, res) => {
+    const userCollection = dbc.collection("users");
+    try {
+        const adminUser = await userCollection.findOne({_id: new ObjectId(req.userId)});
+        if (!(adminUser.isAdmin)) {
+            return res.sendStatus(401);
+        }
+        for await (const user of userCollection.find({})) {
+            if (user.summonerId) {
+                axios.get(`https://tr1.api.riotgames.com/lol/summoner/v4/summoners/${user.summonerId}?api_key=RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a`).then(response => {
+                    userCollection.updateOne({_id: new ObjectId(user._id)}, {$set: {avatar: response.data.profileIconId}})
+                })
+            }
+            if (user.puuid) {
+                axios.get(`https://europe.api.riotgames.com/riot/account/v1/accounts/by-puuid/${user.puuid}?api_key=RGAPI-7e367c50-3b59-4103-b841-2ed3fee1063a`).then(response => {
+                    userCollection.updateOne({_id: new ObjectId(user._id)}, {
+                        $set: {
+                            gameName: response.data.gameName,
+                            tagLine: response.data.tagLine
+                        }
+                    })
+
+                })
+            }
+        }
+        return res.sendStatus(200);
+    } catch (e) {
+        console.log(e);
+        return res.sendStatus(500);
+    }
+})
+
 userRouter.post("/delete", authMiddleware, async (req, res) => {
     const {userId} = req.body;
     const userCollection = dbc.collection("users");
@@ -88,7 +121,7 @@ userRouter.post("/delete", authMiddleware, async (req, res) => {
             return res.sendStatus(401);
         }
 
-        
+
     } catch (e) {
         console.log(e);
         return res.sendStatus(500);
