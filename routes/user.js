@@ -58,7 +58,7 @@ userRouter.post("/signin", async (req, res, next) => {
     const user = await userCollection.findOne({email: email})
 
     if (!user)
-        return res.status(200).json({status: false, error: "Kullanıcı adı veya şifre yanlış"})
+        return res.status(200).json({status: false, message: "Kullanıcı adı veya şifre yanlış"})
 
     console.log(user.password);
 
@@ -66,7 +66,7 @@ userRouter.post("/signin", async (req, res, next) => {
     const validPassword = await bcrypt.compare(password, user.password)
 
     if (!validPassword)
-        return res.status(200).json({status: false, error: "Kullanıcı adı veya şifre yanlış"});
+        return res.status(200).json({status: false, message: "Kullanıcı adı veya şifre yanlış"});
 
     const tokenData = {
         id: user._id,

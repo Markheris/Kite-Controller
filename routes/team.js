@@ -10,25 +10,27 @@ teamRouter.post("/create", authMiddleware, async (req, res) => {
     try {
         const teamCollection = dbc.collection("teams");
         const userCollection = dbc.collection("users");
-        const {teamName} = req.body
+        const {name} = req.body
         const playerId = req.userId;
-        const team = await teamCollection.findOne({teamName: teamName});
+        const team = await teamCollection.findOne({name: name});
         const user = await userCollection.findOne({_id: new ObjectId(playerId)})
         if (user.team) {
-            return res.status(200).json({status: false, error: "Zaten takımın var"})
+            return res.status(200).json({status: false, message: "Zaten takımın var"})
         }
         if (team) {
-            return res.status(200).json({status: false, error: "Bu takım ismi kullanılıyor"})
+            return res.status(200).json({status: false, message: "Bu takım ismi kullanılıyor"})
         }
         const teamData = {
-            teamName: teamName,
+            name: name,
             players: [{
                 playerId: playerId,
                 captain: true
             }],
         }
         await teamCollection.insertOne(teamData).then(async team => {
-            await userCollection.findOneAndUpdate({_id: new ObjectId(playerId)}, {$set: {team: team.insertedId.toString()}}, {
+            await userCollection.findOneAndUpdate({_id: new ObjectId(playerId)}, {
+                $set: {team: team.insertedId.toString()}
+            }, {
                 returnOriginal: false
             });
             res.status(200).json({message: "Başarıyla oluşturuldu", status: true, team});
@@ -38,13 +40,14 @@ teamRouter.post("/create", authMiddleware, async (req, res) => {
         return res.sendStatus(500);
     }
 })
-teamRouter.post("/get", authMiddleware, async (req, res) => {
+teamRouter.get("/get", authMiddleware, async (req, res) => {
     try {
         let teamPlayersData = [];
         const teamCollection = dbc.collection("teams");
         const userCollection = dbc.collection("users");
-        const {teamId} = req.body
-        const team = await teamCollection.findOne({_id: new ObjectId(teamId)});
+        const userId = req.userId;
+        const user = await userCollection.findOne({_id: new ObjectId(userId)})
+        const team = await teamCollection.findOne({_id: new ObjectId(user.team)});
         if (!team) {
             return res.status(404).json({status: false, error: "Takım bulunamadı"})
         }
