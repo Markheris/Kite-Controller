@@ -27,7 +27,7 @@ if (process.env.NODE_ENV === 'production') {
         ca: fs.readFileSync("/etc/letsencrypt/live/api.kitetournaments.com/chain.pem"),
     }
     server = https.createServer(options, app);
-    origin = "*"
+    origin = ["https://kitetournaments.com", "https://kite-next.vercel.app"]
     console.log("production")
 } else {
     server = http.createServer(app)
