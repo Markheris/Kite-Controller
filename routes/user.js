@@ -79,7 +79,7 @@ userRouter.post("/signin", async (req, res, next) => {
     return res.json({message: "Giriş başarılı", status: true});
 })
 
-userRouter.get("/userUpdate", authMiddleware, async (req, res) => {
+userRouter.get("/update", authMiddleware, async (req, res) => {
     const userCollection = dbc.collection("users");
     try {
         const adminUser = await userCollection.findOne({_id: new ObjectId(req.userId)});
@@ -97,7 +97,7 @@ userRouter.get("/userUpdate", authMiddleware, async (req, res) => {
                     userCollection.updateOne({_id: new ObjectId(user._id)}, {
                         $set: {
                             gameName: response.data.gameName,
-                            tagLine: response.data.tagLine
+                            tagLine: response.data.tagLine.toUpperCase()
                         }
                     })
 
