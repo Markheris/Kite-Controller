@@ -14,6 +14,9 @@ teamRouter.post("/create", authMiddleware, async (req, res) => {
         const playerId = req.userId;
         const team = await teamCollection.findOne({name: name});
         const user = await userCollection.findOne({_id: new ObjectId(playerId)})
+        if (!user.puuid) {
+            return res.status(200).json({status: false, message: "Hesaplarını bağlamadan takım oluşturamazsın"})
+        }
         if (user.team) {
             return res.status(200).json({status: false, message: "Zaten takımın var"})
         }

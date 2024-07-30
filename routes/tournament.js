@@ -22,7 +22,7 @@ tournamentRouter.get("/v2/createBracket", async (req, res) => {
         const tournament = await tournamentCollection.findOne({tournamentId: tournamentId});
         const registeredTeams = tournament.registeredTeams
         await manager.create({
-            name: 'Kite Tournament #2 Fikstür',
+            name: `${tournament.name} Fikstür`,
             tournamentId: tournamentId, //
             type: 'single_elimination',
             settings: {
@@ -182,9 +182,9 @@ tournamentRouter.post("/join", authMiddleware, async (req, res) => {
         }
         const tournament = await tournamentCollection.findOne({tournamentId: tournamentId})
         if (tournament.registeredTeams) {
-            const registeredTeam = tournament.registeredTeams.find(({name}) => name === team.teamName);
+            const registeredTeam = tournament.registeredTeams.find(({name}) => name === team.name);
             if (registeredTeam) {
-                if (registeredTeam.name === team.teamName) {
+                if (registeredTeam.name === team.name) {
                     return res.status(200).json({status: false, error: "Bu turnuvaya katılma isteği göndermişsin"})
                 }
             }
@@ -206,7 +206,7 @@ tournamentRouter.post("/join", authMiddleware, async (req, res) => {
         // await tournamentCollection.updateOne({tournamentId: tournamentId}, {
         //     $push: {
         //         registeredTeams: {
-        //             name: team.teamName,
+        //             name: team.name,
         //             id: team._id,
         //         }
         //     }
@@ -308,7 +308,7 @@ tournamentRouter.post("/adminChoose", authMiddleware, async (req, res) => {
                 }
             })
             await tournamentCollection.updateOne({tournamentId: tournamentId}, {
-                $push: {registeredTeams: team.teamName}
+                $push: {registeredTeams: team.name}
             })
             return res.status(200).json({status: true, message: "Takım Onaylandı"})
         } else {

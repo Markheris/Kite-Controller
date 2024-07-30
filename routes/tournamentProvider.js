@@ -64,11 +64,11 @@ tournamentProviderRouter.post("/createThLobby", authMiddleware, async (req, res)
                 tournamentImage: tournament.tournamentImage,
                 tour: "3.Lük Maçı",
                 team1: {
-                    name: teams[0].teamName,
+                    name: teams[0].name,
                     players: teams[0].players
                 },
                 team2: {
-                    name: teams[1].teamName,
+                    name: teams[1].name,
                     players: teams[1].players
                 },
             }
@@ -113,8 +113,10 @@ tournamentProviderRouter.post("/v2/createLobby/", authMiddleware, async (req, re
                 const participant2 = tournament.demoBracket.participant.find(({id}) => id === tournament.demoBracket.match[i].opponent2.id)
                 console.log(participant1);
                 console.log(participant2);
-                let team1 = await teamCollection.findOne({teamName: participant1.name})
-                let team2 = await teamCollection.findOne({teamName: participant2.name})
+                if (!participant2)
+                    continue;
+                let team1 = await teamCollection.findOne({name: participant1.name})
+                let team2 = await teamCollection.findOne({name: participant2.name})
                 if (!team1 || !team2) {
                     continue;
                 }
@@ -161,11 +163,11 @@ tournamentProviderRouter.post("/v2/createLobby/", authMiddleware, async (req, re
                         teamId: participant1.id,
                         tour: tourName,
                         team1: {
-                            name: team1.teamName,
+                            name: team1.name,
                             players: team1.players
                         },
                         team2: {
-                            name: team2.teamName,
+                            name: team2.name,
                             players: team2.players
                         },
                     }
@@ -179,16 +181,16 @@ tournamentProviderRouter.post("/v2/createLobby/", authMiddleware, async (req, re
                         tour: tourName,
                         teamId: participant2.id,
                         team1: {
-                            name: team1.teamName,
+                            name: team1.name,
                             players: team1.players
                         },
                         team2: {
-                            name: team2.teamName,
+                            name: team2.name,
                             players: team2.players
                         },
                     }
-                    await teamCollection.updateOne({teamName: team1.teamName}, {$set: {activeLobby: activeLobbyTeam1}})
-                    await teamCollection.updateOne({teamName: team2.teamName}, {$set: {activeLobby: activeLobbyTeam2}})
+                    await teamCollection.updateOne({name: team1.name}, {$set: {activeLobby: activeLobbyTeam1}})
+                    await teamCollection.updateOne({name: team2.name}, {$set: {activeLobby: activeLobbyTeam2}})
                 }).catch(e => {
                     console.log("Hata", e);
                     return res.sendStatus(500)
@@ -263,11 +265,11 @@ tournamentProviderRouter.post("/createLobby", authMiddleware, async (req, res) =
                     tournamentImage: tournament.tournamentImage,
                     tour: tournament.bracket[tourIndex].title,
                     team1: {
-                        name: teams[0].teamName,
+                        name: teams[0].name,
                         players: teams[0].players
                     },
                     team2: {
-                        name: teams[1].teamName,
+                        name: teams[1].name,
                         players: teams[1].players
                     },
                 }
