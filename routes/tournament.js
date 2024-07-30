@@ -195,6 +195,7 @@ tournamentRouter.post("/join", authMiddleware, async (req, res) => {
             $set: {
                 registeredTournament: {
                     tournamentId: tournament.tournamentId,
+                    image: tournament.tournamentImage,
                     status: "waiting",
                     name: tournament.name,
                     approvedPlayers: {
