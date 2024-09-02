@@ -52,8 +52,8 @@ app.get("/", (req, res) => {
     res.json({message: "Merhaba Dünya"}).status(200)
 })
 
-app.get("/.well-known/acme-challenge/cG3Z1wA3hjLa2IQfDx4ajCcoT25TrRHHKF1hk-qog98", (req, res) => {
-    res.send('cG3Z1wA3hjLa2IQfDx4ajCcoT25TrRHHKF1hk-qog98.usEDMBAU7Dg7lFnM6uYI8E3GnVM5_B9NoUbkBYZ8SwI')
+app.get("/.well-known/acme-challenge/EqX2aCT-h7bBZaq1WkMBZS2TBmM6ZRtR2HtR-PYPlpw", (req, res) => {
+    res.send('EqX2aCT-h7bBZaq1WkMBZS2TBmM6ZRtR2HtR-PYPlpw.usEDMBAU7Dg7lFnM6uYI8E3GnVM5_B9NoUbkBYZ8SwI')
 })
 
 
