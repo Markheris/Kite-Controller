@@ -154,7 +154,7 @@ if (process.env.NODE_ENV === 'production') {
         console.log("Listening on *:443");
     })
 } else {
-    server.listen(443, () => {
+    server.listen(80, () => {
         console.log("Listening on *:80");
     })
 }
