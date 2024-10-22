@@ -22,9 +22,9 @@ let origin
 
 if (process.env.NODE_ENV === 'production') {
     const options = {
-        key: fs.readFileSync("certificates/privkey.pem"),
-        cert: fs.readFileSync("certificates/cert.pem"),
-        ca: fs.readFileSync("certificates/chain.pem"),
+        key: fs.readFileSync("/app/certificates/privkey.pem"),
+        cert: fs.readFileSync("/app/certificates/cert.pem"),
+        ca: fs.readFileSync("/app/certificates/chain.pem"),
     }
     server = https.createServer(options, app);
     origin = ["https://kitetournaments.com", "https://next.kitetournaments.com"]
