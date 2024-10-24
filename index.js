@@ -93,7 +93,7 @@ io.on("connection", socket => {
         // console.log(users[clientUserId].clientTeamId);
     })
     socket.on("disconnect", () => {
-        console.log("dc user")
+        console.log("dc userr")
         delete usersMap[socket.id]
         console.log(Object.keys(usersMap).length);
     })
